@@ -6,18 +6,20 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/vladimir3322/stonent_go/erc1155"
+	"github.com/vladimir3322/stonent_go/services/loader/events"
 	"log"
 	"math/big"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 )
 
 func main() {
 
-	//go pastEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430")
+	go pastEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430")
 
-	go watchEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430")
+	//go watchEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430")
 
 	WaitSignals()
 
@@ -35,19 +37,15 @@ func pastEvents(address string) {
 		log.Fatal("Whoops something went wrong!", err)
 	}
 
-	opt := &bind.FilterOpts{} // todo нужно идти рекурсивно
-	s := []*big.Int{}
-	past, err := contract.FilterURI(opt, s)
-	if err != nil {
-		log.Fatalf("Failed FilterURI: %v", err)
-	}
-	notEmpty := true
-	for notEmpty {
-		notEmpty = past.Next()
-		if notEmpty {
-			fmt.Println("event log:", past.Event.Id, past.Event.Value)
-		}
-	}
+	var waiter = &sync.WaitGroup{}
+
+	waiter.Add(1)
+	//events.GetEvents(contract, 12211843, 12291943, waiter) // Много картин
+	events.GetEvents(contract, 12291940, 12291943, waiter) // 4 картины
+
+	waiter.Wait()
+
+	fmt.Println("Finished")
 }
 
 func watchEvents(address string) {
