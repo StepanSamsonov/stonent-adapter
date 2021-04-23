@@ -17,9 +17,13 @@ type iImageMetadata struct {
 	Image string
 }
 
-func downloadImage(ipfsHost string, ipfsPath string, waiter *sync.WaitGroup) {
+func downloadImageWithWaiter(ipfsHost string, ipfsPath string, waiter *sync.WaitGroup) {
 	defer waiter.Done()
 
+	downloadImage(ipfsHost, ipfsPath)
+}
+
+func downloadImage(ipfsHost string, ipfsPath string) {
 	ipfsMetadataUrl := ipfsHost + ipfsPath
 	imageMetadataRes, err := http.Get(ipfsMetadataUrl)
 
@@ -50,7 +54,6 @@ func downloadImage(ipfsHost string, ipfsPath string, waiter *sync.WaitGroup) {
 	}
 
 	imageSourceUrl := ipfsHost + "/ipfs" + parsedImageUrl.Path
-
 	imageSourceRes, err := http.Get(imageSourceUrl)
 
 	if err != nil {
@@ -71,24 +74,24 @@ func downloadImage(ipfsHost string, ipfsPath string, waiter *sync.WaitGroup) {
 		return
 	}
 
-	fmt.Println(imageSource)
+	fmt.Println("Image size:", len(imageSource))
 }
 
-func GetEvents(contract *erc1155.Erc1155, start uint64, end uint64, waiter *sync.WaitGroup) {
+func GetEvents(contract *erc1155.Erc1155, startBlock uint64, endBlock uint64, waiter *sync.WaitGroup) {
 	defer waiter.Done()
 
-	if start <= end {
-		opt := &bind.FilterOpts{Start: start, End: &end}
+	if startBlock <= endBlock {
+		opt := &bind.FilterOpts{Start: startBlock, End: &endBlock}
 		s := []*big.Int{}
 		past, err := contract.FilterURI(opt, s)
 
 		if err != nil {
-			var middle = (start + end) / 2
+			var middleBlock = (startBlock + endBlock) / 2
 
 			waiter.Add(1)
-			go GetEvents(contract, start, middle, waiter)
+			go GetEvents(contract, startBlock, middleBlock, waiter)
 			waiter.Add(1)
-			go GetEvents(contract, middle+1, end, waiter)
+			go GetEvents(contract, middleBlock+1, endBlock, waiter)
 			return
 		}
 
@@ -100,7 +103,7 @@ func GetEvents(contract *erc1155.Erc1155, start uint64, end uint64, waiter *sync
 			if notEmpty {
 				waiter.Add(1)
 
-				go downloadImage(config.IpfsLink[ipfsNodeIndex], past.Event.Value, waiter)
+				go downloadImageWithWaiter(config.IpfsLink[ipfsNodeIndex], past.Event.Value, waiter)
 
 				ipfsNodeIndex += 1
 				ipfsNodeIndex %= len(config.IpfsLink)
@@ -108,5 +111,32 @@ func GetEvents(contract *erc1155.Erc1155, start uint64, end uint64, waiter *sync
 		}
 	} else {
 		return
+	}
+}
+
+func ListenEvents(contract *erc1155.Erc1155, startBlock uint64) {
+	s := []*big.Int{}
+	ch := make(chan *erc1155.Erc1155URI)
+	opts := &bind.WatchOpts{Start: &startBlock}
+	watcher, err := contract.WatchURI(opts, ch, s)
+
+	if err != nil {
+		fmt.Println("Failed listening events:", err)
+	}
+
+	ipfsNodeIndex := 0
+
+	for {
+		select {
+		case err := <-watcher.Err():
+			fmt.Println("Failed listening events:", err)
+		case Event := <-ch:
+			fmt.Println(Event.Value)
+
+			go downloadImage(config.IpfsLink[ipfsNodeIndex], Event.Value)
+
+			ipfsNodeIndex += 1
+			ipfsNodeIndex %= len(config.IpfsLink)
+		}
 	}
 }
