@@ -59,6 +59,7 @@ func listenEvents(address string, startBlock uint64) {
 
 	events.ListenEvents(contract, startBlock)
 }
+
 func WaitSignals() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
