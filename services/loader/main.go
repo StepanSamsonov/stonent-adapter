@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/vladimir3322/stonent_go/erc1155"
 	"github.com/vladimir3322/stonent_go/services/loader/events"
+	"github.com/vladimir3322/stonent_go/services/loader/redis"
 	"log"
 	"os"
 	"os/signal"
@@ -21,6 +22,7 @@ func main() {
 
 	//go listenEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12291943)
 
+	go redis.ConsumeEvents()
 	WaitSignals()
 
 	//fmt.Println(api.GetLatestBlock(conn))

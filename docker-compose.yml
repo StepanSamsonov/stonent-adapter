@@ -2,3 +2,18 @@ version: '3'
 services:
   stonent-adapter:
     build: ./
+    depends_on:
+      - "redis"
+#    networks:
+#      - bridge
+  redis:
+    image: "redis:6.2.2"
+    command: redis-server
+    ports:
+      - "6379:6379"
+#    networks:
+#      - bridge
+
+#networks:
+#  bridge:
+#    driver: bridge

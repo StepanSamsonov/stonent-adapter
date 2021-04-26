@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/vladimir3322/stonent_go/erc1155"
 	"github.com/vladimir3322/stonent_go/services/loader/config"
+	"github.com/vladimir3322/stonent_go/services/loader/redis"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -57,11 +58,11 @@ func downloadImage(ipfsHost string, ipfsPath string) {
 	imageSourceRes, err := http.Get(imageSourceUrl)
 
 	if err != nil {
-		fmt.Println("Error with:", imageSourceUrl, err)
+		fmt.Println("Error with:", ipfsMetadataUrl, imageSourceUrl, err)
 		return
 	}
 	if imageSourceRes.StatusCode != http.StatusOK {
-		fmt.Println("Error with:", imageSourceUrl, "invalid response code:", imageSourceRes.StatusCode)
+		fmt.Println("Error with:", ipfsMetadataUrl, imageSourceUrl, "invalid response code:", imageSourceRes.StatusCode)
 		return
 	}
 
@@ -74,7 +75,8 @@ func downloadImage(ipfsHost string, ipfsPath string) {
 		return
 	}
 
-	fmt.Println("Image size:", len(imageSource))
+	fmt.Println("Downloaded image size:", len(imageSource))
+	redis.PushEvent(imageSource)
 }
 
 func GetEvents(contract *erc1155.Erc1155, startBlock uint64, endBlock uint64, waiter *sync.WaitGroup) {

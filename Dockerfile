@@ -1,4 +1,4 @@
-FROM golang:latest
+FROM golang:1.14
 ENV GOPROXY=direct
 ENV GO111MODULE=on
 WORKDIR /app
