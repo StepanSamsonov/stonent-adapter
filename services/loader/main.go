@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/vladimir3322/stonent_go/erc1155"
-	"github.com/vladimir3322/stonent_go/services/loader/events"
-	"github.com/vladimir3322/stonent_go/services/loader/redis"
+	"github.com/vladimir3322/stonent_go/events"
+	"github.com/vladimir3322/stonent_go/tools/erc1155"
 	"log"
 	"os"
 	"os/signal"
@@ -17,12 +16,12 @@ import (
 func main() {
 
 	//go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 0, 12291943) // Почти все
-	//go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12211843, 12291943) // Много картин
-	go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12291940, 12291943) // 4 картины
+	go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12211843, 12291943) // Много картин
+	//go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12291940, 12291943) // 4 картины
 
 	//go listenEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12291943)
 
-	go redis.ConsumeEvents()
+	//go rabbitmq.ConsumeEvents()
 	WaitSignals()
 
 	//fmt.Println(api.GetLatestBlock(conn))
@@ -43,6 +42,7 @@ func getEvents(address string, startBlock uint64, endBlock uint64) {
 
 	waiter.Add(1)
 	events.GetEvents(contract, startBlock, endBlock, waiter)
+	go events.RunBuffer()
 	waiter.Wait()
 
 	fmt.Println("Finished")

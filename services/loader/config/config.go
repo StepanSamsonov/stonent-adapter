@@ -2,6 +2,7 @@ package config
 
 var IpfsLink = []string{"https://ipfs.daonomic.com", "https://ipfs.io"}
 
-//var RedisUrl = "localhost:6379"
-var RedisUrl = "redis:6379"
-var RedisJobQueue = "imageSources"
+var RabbitMQUrl = "amqp://rabbitmq:rabbitmq@rabbit1:5672/"
+var RabbitMQQueueName = "imageSources"
+var DownloadImageBufferSize = 1
+var DownloadImageMaxCount = 5

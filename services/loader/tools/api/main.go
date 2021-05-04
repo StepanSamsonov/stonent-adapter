@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/vladimir3322/stonent_go/models"
+	"github.com/vladimir3322/stonent_go/tools/models"
 	"log"
 	"math/big"
 )
