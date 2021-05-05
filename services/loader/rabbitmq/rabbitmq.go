@@ -34,7 +34,7 @@ func PushEvent(data []byte) {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"hello", // name
+		config.RabbitMQQueueName, // name
 		false,   // durable
 		false,   // delete when unused
 		false,   // exclusive
@@ -68,7 +68,7 @@ func ConsumeEvents() {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"hello", // name
+		config.RabbitMQQueueName, // name
 		false,   // durable
 		false,   // delete when unused
 		false,   // exclusive

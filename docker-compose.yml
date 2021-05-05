@@ -1,20 +1,35 @@
 version: '3'
 services:
-  adapter:
-    image: "stonent-adapter"
-    #    build: ./services/loader
-    depends_on:
-      - rabbit1
-  rabbit1:
-    image: "rabbitmq:3-management"
-    hostname: "rabbit1"
-    environment:
-      RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
-      RABBITMQ_DEFAULT_USER: "rabbitmq"
-      RABBITMQ_DEFAULT_PASS: "rabbitmq"
-      RABBITMQ_DEFAULT_VHOST: "/"
+  ml:
+    build: ./services/ml
     ports:
-      - "15672:15672"
-      - "5672:5672"
-    labels:
-      NAME: "rabbitmq1"
+      - 9090:9090
+    depends_on:
+      - redis
+      - loader
+  loader:
+    build: ./services/loader
+    ports:
+      - 5000:5000
+    depends_on:
+      - redis
+  redis:
+    image: "redis:6.2.2"
+    command: redis-server
+    ports:
+      - 6379:6379
+
+#      - rabbit1
+#  rabbit1:
+#    image: "rabbitmq:3-management"
+#    hostname: "rabbit1"
+#    environment:
+#      RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
+#      RABBITMQ_DEFAULT_USER: "rabbitmq"
+#      RABBITMQ_DEFAULT_PASS: "rabbitmq"
+#      RABBITMQ_DEFAULT_VHOST: "/"
+#    ports:
+#      - "15672:15672"
+#      - "5672:5672"
+#    labels:
+#      NAME: "rabbitmq1"

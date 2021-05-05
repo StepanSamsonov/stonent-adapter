@@ -23,7 +23,7 @@ func pushToBuffer(item BufferItem) {
 
 	}
 
-	if countOfDownloaded >= config.DownloadImageMaxCount {
+	if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
 		item.waiter.Done()
 		return
 	}
@@ -38,7 +38,7 @@ func RunBuffer() {
 	for {
 		select {
 		case item := <-Buffer:
-			if countOfDownloaded >= config.DownloadImageMaxCount {
+			if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
 				item.waiter.Done()
 				return
 			}

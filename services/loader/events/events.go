@@ -1,6 +1,7 @@
 package events
 
 import (
+	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/vladimir3322/stonent_go/config"
@@ -13,10 +14,35 @@ type iImageMetadata struct {
 	Image string
 }
 
+func GetById(contract *erc1155.Erc1155, id *big.Int) ([]byte, error) {
+	opt := &bind.FilterOpts{}
+	s := []*big.Int{id}
+
+	event, err := contract.FilterURI(opt, s)
+
+	if err != nil {
+		return nil, err
+	}
+
+	isExist := event.Next()
+
+	if !isExist {
+		return nil, errors.New("event not found")
+	}
+
+	imageSource, err := getImageSource(config.IpfsLink[0], event.Event.Value)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return imageSource, nil
+}
+
 func GetEvents(contract *erc1155.Erc1155, startBlock uint64, endBlock uint64, waiter *sync.WaitGroup) {
 	defer waiter.Done()
 
-	if countOfDownloaded >= config.DownloadImageMaxCount {
+	if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
 		waiter.Done()
 		return
 	}
@@ -26,7 +52,7 @@ func GetEvents(contract *erc1155.Erc1155, startBlock uint64, endBlock uint64, wa
 		s := []*big.Int{}
 		past, err := contract.FilterURI(opt, s)
 
-		if countOfDownloaded >= config.DownloadImageMaxCount {
+		if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
 			waiter.Done()
 			return
 		}
@@ -45,7 +71,7 @@ func GetEvents(contract *erc1155.Erc1155, startBlock uint64, endBlock uint64, wa
 		ipfsNodeIndex := 0
 
 		for notEmpty {
-			if countOfDownloaded >= config.DownloadImageMaxCount {
+			if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
 				waiter.Done()
 				return
 			}
