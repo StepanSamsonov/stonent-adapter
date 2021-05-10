@@ -6,25 +6,25 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/vladimir3322/stonent_go/config"
 	"github.com/vladimir3322/stonent_go/events"
+	"github.com/vladimir3322/stonent_go/rabbitmq"
 	"github.com/vladimir3322/stonent_go/server"
 	"github.com/vladimir3322/stonent_go/tools/erc1155"
+	"github.com/vladimir3322/stonent_go/tools/utils"
 	"log"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 )
 
 func main() {
+	go rabbitmq.ConsumeEvents()
 	//go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 0, 12291943) // Почти все
 	//go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12211843, 12291943) // Много картин
-	go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12291940, 12291943) // 4 картины
+	//go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12291940, 12291943) // 4 картины
 
 	//go listenEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12291943)
-
+	go rabbitmq.SendTestNFT()
 	//go redis.ConsumeEvents()
-    go server.Run()
-	WaitSignals()
+	go server.Run()
+	utils.WaitSignals()
 
 	//fmt.Println(api.GetLatestBlock(conn))
 }
@@ -65,11 +65,4 @@ func listenEvents(address string, startBlock uint64) {
 	}
 
 	events.ListenEvents(contract, startBlock)
-}
-
-func WaitSignals() {
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
-	sig := <-signals
-	fmt.Println("Got signal for exiting", sig)
 }
