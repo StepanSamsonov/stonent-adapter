@@ -1,14 +1,21 @@
 package config
 
-var ServerPort = 5000
-var ProviderUrl = "wss://mainnet.infura.io/ws/v3/844de29fabee4fcebf315309262d0836"
+const ServerPort = 5000
+const ProviderUrl = "wss://mainnet.infura.io/ws/v3/844de29fabee4fcebf315309262d0836"
+
 var IpfsLink = []string{"https://ipfs.daonomic.com", "https://ipfs.io"}
 
-var RabbitMQUrl = "amqp://rabbitmq:rabbitmq@rabbit1:5672/"
-var RabbitMQQueueName = "imageSources"
+const RabbitMQUrl = "amqp://rabbitmq:rabbitmq@rabbit1:5672/"
+const RabbitMQQueueName = "imageSources"
 
-var RedisUrl = "redis:6379"
-var RedisJobQueue = "imageSources"
+const RedisUrl = "redis:6379"
+const RedisJobQueue = "imageSources"
 
-var DownloadImageBufferSize = 2
-var DownloadImageMaxCount = -1 // -1 for ignoring
+const DownloadImageBufferSize = 2
+const DownloadImageMaxCount = -1 // -1 for ignoring
+
+const RabbitLogin = "guest"
+const RabbitPass = "guest"
+const RabbitHost = "rabbitmq"
+const RabbitPort = "5672"
+const QueueIndexing = "indexing"
