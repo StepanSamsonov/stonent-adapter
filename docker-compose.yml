@@ -19,6 +19,7 @@ services:
       - 5000:5000
     depends_on:
       - rabbitmq
+    restart: always
 #  redis:
 #    image: "redis:6.2.2"
 #    command: redis-server
