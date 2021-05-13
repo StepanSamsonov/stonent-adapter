@@ -6,6 +6,7 @@ from flask import Flask, request, jsonify
 from nn_image_checker import NNModelChecker
 from PIL import Image
 from image_manager import ImageManager
+import rabbitmqapi
 
 
 app = Flask(__name__)
@@ -63,4 +64,7 @@ def call_adapter():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port='9090', threaded=True)
+    for a, b, c in rabbitmqapi.consume_events():
+        print(a, b, c)
+
+    # app.run(debug=True, host='0.0.0.0', port='9090', threaded=True)

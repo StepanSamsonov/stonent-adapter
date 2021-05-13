@@ -15,7 +15,7 @@ import (
 )
 
 func main() {
-	go rabbitmq.ConsumeEvents()
+	//go rabbitmq.ConsumeEvents()
 	//go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 0, 12291943) // Почти все
 	//go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12211843, 12291943) // Много картин
 	//go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12291940, 12291943) // 4 картины

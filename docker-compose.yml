@@ -6,13 +6,13 @@ volumes:
     driver: local
 
 services:
-#  ml:
-#    build: ./services/ml
-#    ports:
-#      - 9090:9090
-#    depends_on:
-#      - rabbitmq
-#      - loader
+  ml:
+    build: ./services/ml
+    ports:
+      - 9090:9090
+    depends_on:
+      - rabbitmq
+      - loader
   loader:
     build: ./services/loader
     ports:
@@ -38,18 +38,3 @@ services:
     restart: always
     volumes:
       - rabbitmq:/var/lib/rabbitmq
-
-#      - rabbit1
-#  rabbit1:
-#    image: "rabbitmq:3-management"
-#    hostname: "rabbit1"
-#    environment:
-#      RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
-#      RABBITMQ_DEFAULT_USER: "rabbitmq"
-#      RABBITMQ_DEFAULT_PASS: "rabbitmq"
-#      RABBITMQ_DEFAULT_VHOST: "/"
-#    ports:
-#      - "15672:15672"
-#      - "5672:5672"
-#    labels:
-#      NAME: "rabbitmq1"
