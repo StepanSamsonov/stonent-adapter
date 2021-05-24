@@ -5,10 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/vladimir3322/stonent_go/config"
-	"github.com/vladimir3322/stonent_go/redis"
+	"github.com/vladimir3322/stonent_go/rabbitmq"
+	"github.com/vladimir3322/stonent_go/tools/models"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"sync"
 )
@@ -75,14 +77,14 @@ func getImageSource(ipfsHost string, ipfsPath string) ([]byte, error) {
 	return imageSource, nil
 }
 
-func downloadImageWithWaiter(ipfsHost string, ipfsPath string, waiter *sync.WaitGroup, cb func(isSucceed bool)) {
+func downloadImageWithWaiter(address string, nftId string, ipfsHost string, ipfsPath string, waiter *sync.WaitGroup, cb func(isSucceed bool)) {
 	defer waiter.Done()
 
-	isSucceed := downloadImage(ipfsHost, ipfsPath)
+	isSucceed := downloadImage(address, nftId, ipfsHost, ipfsPath)
 	cb(isSucceed)
 }
 
-func downloadImage(ipfsHost string, ipfsPath string) bool {
+func downloadImage(address string, nftId string, ipfsHost string, ipfsPath string) bool {
 	imageSource, err := getImageSource(ipfsHost, ipfsPath)
 
 	if err != nil {
@@ -90,9 +92,28 @@ func downloadImage(ipfsHost string, ipfsPath string) bool {
 		return false
 	}
 
-	fmt.Println("Downloaded image size:", len(imageSource))
-	//rabbitmq.PushEvent(imageSource)
-	redis.PushEvent(imageSource)
+	img := string(imageSource[:])
+	fmt.Println("Downloaded image size:", len(img))
+	fmt.Println("Image fragment:", img[len(img)-100:])
+
+	file, err := os.Create(nftId)
+
+	if err != nil {
+		fmt.Println("ERROR WITH SAVING IMAGE:", err)
+	}
+
+	defer file.Close()
+	_, saveErr := file.WriteString(string(imageSource[:]))
+
+	if saveErr != nil {
+		fmt.Println("ERROR WITH SAVING IMAGE:", err)
+	}
+
+	rabbitmq.SendNFTToRabbit(models.NFT{
+		NFTID:           nftId,
+		ContractAddress: address,
+		Data:            string(imageSource[:]),
+	})
 
 	return true
 }

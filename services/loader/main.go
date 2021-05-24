@@ -15,13 +15,14 @@ import (
 )
 
 func main() {
+	rabbitmq.InitRabbit()
 	//go rabbitmq.ConsumeEvents()
 	//go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 0, 12291943) // Почти все
 	//go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12211843, 12291943) // Много картин
-	//go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12291940, 12291943) // 4 картины
+	go getEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12291940, 12291943) // 4 картины
 
 	//go listenEvents("0xd07dc4262bcdbf85190c01c996b4c06a461d2430", 12291943)
-	go rabbitmq.SendTestNFT()
+	//go rabbitmq.SendTestNFT()
 	//go redis.ConsumeEvents()
 	go server.Run()
 	utils.WaitSignals()
@@ -44,7 +45,7 @@ func getEvents(address string, startBlock uint64, endBlock uint64) {
 	var waiter = &sync.WaitGroup{}
 
 	waiter.Add(1)
-	events.GetEvents(contract, startBlock, endBlock, waiter)
+	events.GetEvents(address, contract, startBlock, endBlock, waiter)
 	go events.RunBuffer()
 	waiter.Wait()
 
@@ -64,5 +65,5 @@ func listenEvents(address string, startBlock uint64) {
 		log.Fatal("Whoops something went wrong!", err)
 	}
 
-	events.ListenEvents(contract, startBlock)
+	events.ListenEvents(address, contract, startBlock)
 }

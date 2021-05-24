@@ -79,7 +79,7 @@ class NNModelChecker:
         self._index.addDataPoint(data=features, id=index)
         self._index_need_to_be_build = True
 
-    def find_most_simular_images(self, pil_image, num=5):
+    def find_most_similar_images(self, pil_image, num=5):
         """
         :param pil_image:  image loaded py PIL library.
         :param num: number of neighbours to return

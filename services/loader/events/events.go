@@ -30,7 +30,8 @@ func GetById(contract *erc1155.Erc1155, id *big.Int) ([]byte, error) {
 		return nil, errors.New("event not found")
 	}
 
-	imageSource, err := getImageSource(config.IpfsLink[0], event.Event.Value)
+	// TODO: set to 0
+	imageSource, err := getImageSource(config.IpfsLink[len(config.IpfsLink)-1], event.Event.Value)
 
 	if err != nil {
 		return nil, err
@@ -39,7 +40,7 @@ func GetById(contract *erc1155.Erc1155, id *big.Int) ([]byte, error) {
 	return imageSource, nil
 }
 
-func GetEvents(contract *erc1155.Erc1155, startBlock uint64, endBlock uint64, waiter *sync.WaitGroup) {
+func GetEvents(address string, contract *erc1155.Erc1155, startBlock uint64, endBlock uint64, waiter *sync.WaitGroup) {
 	defer waiter.Done()
 
 	if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
@@ -61,9 +62,9 @@ func GetEvents(contract *erc1155.Erc1155, startBlock uint64, endBlock uint64, wa
 			var middleBlock = (startBlock + endBlock) / 2
 
 			waiter.Add(1)
-			go GetEvents(contract, startBlock, middleBlock, waiter)
+			go GetEvents(address, contract, startBlock, middleBlock, waiter)
 			waiter.Add(1)
-			go GetEvents(contract, middleBlock+1, endBlock, waiter)
+			go GetEvents(address, contract, middleBlock+1, endBlock, waiter)
 			return
 		}
 
@@ -81,6 +82,8 @@ func GetEvents(contract *erc1155.Erc1155, startBlock uint64, endBlock uint64, wa
 				waiter.Add(1)
 
 				go pushToBuffer(BufferItem{
+					address:  address,
+					nftId:    past.Event.Id.String(),
 					ipfsHost: config.IpfsLink[ipfsNodeIndex],
 					ipfsPath: past.Event.Value,
 					waiter:   waiter,
@@ -95,7 +98,7 @@ func GetEvents(contract *erc1155.Erc1155, startBlock uint64, endBlock uint64, wa
 	}
 }
 
-func ListenEvents(contract *erc1155.Erc1155, startBlock uint64) {
+func ListenEvents(address string, contract *erc1155.Erc1155, startBlock uint64) {
 	s := []*big.Int{}
 	ch := make(chan *erc1155.Erc1155URI)
 	opts := &bind.WatchOpts{Start: &startBlock}
@@ -114,7 +117,7 @@ func ListenEvents(contract *erc1155.Erc1155, startBlock uint64) {
 		case Event := <-ch:
 			fmt.Println(Event.Value)
 
-			go downloadImage(config.IpfsLink[ipfsNodeIndex], Event.Value)
+			go downloadImage(address, Event.Id.String(), config.IpfsLink[ipfsNodeIndex], Event.Value)
 
 			ipfsNodeIndex += 1
 			ipfsNodeIndex %= len(config.IpfsLink)

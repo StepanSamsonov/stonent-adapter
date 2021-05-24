@@ -11,7 +11,7 @@ import (
 // for test purposes
 func ConsumeEvents() {
 
-	conn := initRabbit()
+	conn := InitRabbit()
 
 	ch, err := conn.Channel()
 	handleError(err, "Failed to open a channel")

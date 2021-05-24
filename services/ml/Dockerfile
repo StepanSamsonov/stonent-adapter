@@ -31,5 +31,4 @@ RUN pipenv install --system --deploy --ignore-pipfile
 RUN pip3 install py_dotenv
 RUN pip3 install -r requirements.txt
 
-ENTRYPOINT [ "python" ]
-CMD [ "app.py" ]
+CMD ["python", "app.py" ]

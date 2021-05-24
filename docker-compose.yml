@@ -19,12 +19,6 @@ services:
       - 5000:5000
     depends_on:
       - rabbitmq
-    restart: always
-#  redis:
-#    image: "redis:6.2.2"
-#    command: redis-server
-#    ports:
-#      - 6379:6379
   rabbitmq:
     container_name: rabbitmq
     image: rabbitmq:3-management-alpine
@@ -38,3 +32,8 @@ services:
     restart: always
     volumes:
       - rabbitmq:/var/lib/rabbitmq
+#  redis:
+#    image: "redis:6.2.2"
+#    command: redis-server
+#    ports:
+#      - 6379:6379
