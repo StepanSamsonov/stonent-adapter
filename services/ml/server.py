@@ -9,7 +9,6 @@ import config
 from PIL import Image
 from urllib.parse import urlparse, parse_qs
 from globals import mutex, image_checker
-from io import BytesIO
 
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -58,8 +57,6 @@ def get_adapter_result(contract_address, nft_id):
             np_image_source = numpy.frombuffer(base64.b64decode(image_source), numpy.uint8)
             image = cv2.imdecode(np_image_source, cv2.IMREAD_COLOR)
             image = Image.fromarray(image)
-
-            image = Image.open(BytesIO(base64.b64decode(image_source)))
 
             scores, descriptions = image_checker.find_most_similar_images(image)
 

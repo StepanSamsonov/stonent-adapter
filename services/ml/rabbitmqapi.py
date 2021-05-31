@@ -25,7 +25,8 @@ def get_safe_consumer(connection, queue):
     try:
         channel = connection.channel()
         return channel, channel.consume(queue)
-    except:
+    except Exception as e:
+        print(f'Rabbit connection failed: "{e}", restarting', flush=True)
         time.sleep(1)
         return get_safe_consumer(connection, queue)
 
