@@ -7,7 +7,7 @@ class ImageManager:
     def __init__(self, image_checker):
         self.image_checker = image_checker
 
-    def _register_new_image(self, contract_address, nft_id, bytes_source):
+    def register_new_image(self, contract_address, nft_id, bytes_source):
         try:
             pil_image = Image.open(BytesIO(bytes_source))
             description = f'{str(contract_address)}-{str(nft_id)}'
@@ -20,4 +20,4 @@ class ImageManager:
     def register_new_images(self, mutex):
         for contract_address, nft_id, bytes_source in rabbitmqapi.consume_events():
             with mutex:
-                self._register_new_image(contract_address, nft_id, bytes_source)
+                self.register_new_image(contract_address, nft_id, bytes_source)

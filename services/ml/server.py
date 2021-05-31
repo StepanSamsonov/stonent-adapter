@@ -8,7 +8,7 @@ import cv2
 import config
 from PIL import Image
 from urllib.parse import urlparse, parse_qs
-from globals import mutex, image_checker
+from globals import mutex, image_checker, image_manager
 
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -27,6 +27,20 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             response = bytes(response, 'utf8')
 
             self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(response)
+        if self.path.startswith('/register'):
+            parsed_url = urlparse(self.path)
+            parsed_query = parse_qs(parsed_url.query)
+
+            contract_address = parsed_query.get('contract_address')[0]
+            nft_id = parsed_query.get('nft_id')[0]
+            status_code, response = register_new_image(contract_address, nft_id)
+            response = json.dumps(response)
+            response = bytes(response, 'utf8')
+
+            self.send_response(status_code)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(response)
@@ -79,6 +93,21 @@ def get_adapter_result(contract_address, nft_id):
             return get_result(200, result)
         except Exception as e:
             return get_result(200, None, e)
+
+
+def register_new_image(contract_address, nft_id):
+    with mutex:
+        try:
+            image_source, image_source_error = loader.get_image_source(contract_address, nft_id)
+
+            if not image_source or image_source_error:
+                return 500, {'error': image_source_error}
+
+            image_manager.register_new_image(contract_address, nft_id, base64.b64decode(image_source))
+
+            return 200, {'error': None}
+        except Exception as e:
+            return 500, {'error': e}
 
 
 def run_server():
