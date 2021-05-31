@@ -5,6 +5,7 @@ import loader
 import numpy
 import base64
 import cv2
+import os.path
 import config
 from PIL import Image
 from urllib.parse import urlparse, parse_qs
@@ -16,34 +17,37 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
-        if self.path.startswith('/check'):
-            parsed_url = urlparse(self.path)
-            parsed_query = parse_qs(parsed_url.query)
+        parsed_url = urlparse(self.path)
+        parsed_query = parse_qs(parsed_url.query)
 
+        status_code = 404
+        response_body = {'error': 'Not found'}
+
+        if parsed_url.path == '/check':
             contract_address = parsed_query.get('contract_address')[0]
             nft_id = parsed_query.get('nft_id')[0]
-            response = get_adapter_result(contract_address, nft_id)
-            response = json.dumps(response)
-            response = bytes(response, 'utf8')
-
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(response)
-        if self.path.startswith('/register'):
-            parsed_url = urlparse(self.path)
-            parsed_query = parse_qs(parsed_url.query)
-
+            response_body = get_adapter_result(contract_address, nft_id)
+            status_code = 200
+        elif parsed_url.path == '/register_new_image':
             contract_address = parsed_query.get('contract_address')[0]
             nft_id = parsed_query.get('nft_id')[0]
-            status_code, response = register_new_image(contract_address, nft_id)
-            response = json.dumps(response)
-            response = bytes(response, 'utf8')
+            status_code, response_body = register_new_image(contract_address, nft_id)
+        elif parsed_url.path == '/check_registered_image':
+            contract_address = parsed_query.get('contract_address')[0]
+            nft_id = parsed_query.get('nft_id')[0]
+            status_code, response_body = check_registered_image(contract_address, nft_id)
+        elif parsed_url.path == '/get_rejected_images':
+            status_code, response_body = get_rejected_images()
+        elif parsed_url.path == '/statistics':
+            status_code, response_body = get_statistics()
 
-            self.send_response(status_code)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(response)
+        response = json.dumps(response_body)
+        response = bytes(response, 'utf8')
+
+        self.send_response(status_code)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(response)
         return
 
 
@@ -98,6 +102,14 @@ def get_adapter_result(contract_address, nft_id):
 def register_new_image(contract_address, nft_id):
     with mutex:
         try:
+            if os.path.isfile(config.registered_images_file):
+                with open(config.registered_images_file) as file:
+                    data = map(lambda s: s.split(','), file.readlines())
+
+                    for registered_contract_address, registered_nft_id, _ in data:
+                        if registered_contract_address == contract_address and registered_nft_id == nft_id:
+                            return 400, {'error': 'Already registered'}
+
             image_source, image_source_error = loader.get_image_source(contract_address, nft_id)
 
             if not image_source or image_source_error:
@@ -106,6 +118,62 @@ def register_new_image(contract_address, nft_id):
             image_manager.register_new_image(contract_address, nft_id, base64.b64decode(image_source))
 
             return 200, {'error': None}
+        except Exception as e:
+            return 500, {'error': e}
+
+
+def check_registered_image(contract_address, nft_id):
+    with mutex:
+        try:
+            if os.path.isfile(config.registered_images_file):
+                with open(config.registered_images_file) as file:
+                    data = map(lambda s: s.split(','), file.readlines())
+
+                    for registered_contract_address, registered_nft_id, _ in data:
+                        if registered_contract_address == contract_address and registered_nft_id == nft_id:
+                            return 200, {'is_registered': True}
+            return 200, {'is_registered': False}
+        except Exception as e:
+            return 500, {'error': e}
+
+
+def get_rejected_images():
+    with mutex:
+        try:
+            if os.path.isfile(config.rejected_images_file):
+                with open(config.rejected_images_file) as file:
+                    data = map(lambda s: s.split(','), file.readlines())
+
+                return 200, data
+            else:
+                return 200, []
+        except Exception as e:
+            return 500, {'error': e}
+
+
+def get_statistics():
+    with mutex:
+        try:
+            found_images_count = 0
+            precessed_imaged_count = 0
+            registered_images_count = 0
+            rejected_images_count = 0
+
+            if os.path.isfile(config.registered_images_file):
+                with open(config.registered_images_file) as file:
+                    registered_images_count = len(file.readlines())
+            if os.path.isfile(config.rejected_images_file):
+                with open(config.rejected_images_file) as file:
+                    rejected_images_count = len(file.readlines())
+
+            # TODO: get all statistics from loader
+
+            return 200, {
+                'found_images_count': found_images_count,
+                'precessed_imaged_count': precessed_imaged_count,
+                'registered_images_count': registered_images_count,
+                'rejected_images_count': rejected_images_count,
+            }
         except Exception as e:
             return 500, {'error': e}
 
