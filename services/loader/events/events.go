@@ -14,27 +14,27 @@ type iImageMetadata struct {
 	Image string
 }
 
-func GetById(contract *erc1155.Erc1155, id *big.Int) ([]byte, error) {
+func GetById(contract *erc1155.Erc1155, id *big.Int) (string, error) {
 	opt := &bind.FilterOpts{}
 	s := []*big.Int{id}
 
 	event, err := contract.FilterURI(opt, s)
 
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	isExist := event.Next()
 
 	if !isExist {
-		return nil, errors.New("event not found")
+		return "", errors.New("event not found")
 	}
 
 	// TODO: set to 0
 	imageSource, err := getImageSource(config.IpfsLink[len(config.IpfsLink)-1], event.Event.Value)
 
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	return imageSource, nil

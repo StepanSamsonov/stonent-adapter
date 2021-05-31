@@ -64,7 +64,7 @@ func handleGetImageSource(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(imageSource)
+	w.Write([]byte(imageSource))
 }
 
 func Run() {

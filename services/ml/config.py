@@ -1,3 +1,5 @@
+server_port = 9090
+
 redis_url = 'redis://redis:6379'
 redis_job_queue = 'imageSources'
 
