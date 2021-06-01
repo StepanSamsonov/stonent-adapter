@@ -43,7 +43,7 @@ func GetById(contract *erc1155.Erc1155, id *big.Int) (string, error) {
 func GetEvents(address string, contract *erc1155.Erc1155, startBlock uint64, endBlock uint64, waiter *sync.WaitGroup) {
 	defer waiter.Done()
 
-	if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
+	if IsExceededImagesLimitCount() {
 		waiter.Done()
 		return
 	}
@@ -53,7 +53,7 @@ func GetEvents(address string, contract *erc1155.Erc1155, startBlock uint64, end
 		s := []*big.Int{}
 		past, err := contract.FilterURI(opt, s)
 
-		if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
+		if IsExceededImagesLimitCount() {
 			waiter.Done()
 			return
 		}
@@ -72,7 +72,7 @@ func GetEvents(address string, contract *erc1155.Erc1155, startBlock uint64, end
 		ipfsNodeIndex := 0
 
 		for notEmpty {
-			if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
+			if IsExceededImagesLimitCount() {
 				waiter.Done()
 				return
 			}

@@ -5,7 +5,6 @@ import loader
 import numpy
 import base64
 import cv2
-import os.path
 import config
 from PIL import Image
 from urllib.parse import urlparse, parse_qs
@@ -54,7 +53,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 def get_adapter_result(contract_address, nft_id):
     def get_result(code, data=None, error=None):
         return {
-            'jobRunID': f'{contract_address}_{nft_id}',
+            'job_run_iD': f'{contract_address}_{nft_id}',
             'data': data,
             'error': error,
             'statusCode': code,
@@ -88,7 +87,7 @@ def get_adapter_result(contract_address, nft_id):
 
             result = {
                 'score': int(score * 100),
-                'detailed information': {
+                'detailed_information': {
                     'scores': [*scores],
                     'descriptions': [*descriptions]
                 }
@@ -102,13 +101,12 @@ def get_adapter_result(contract_address, nft_id):
 def register_new_image(contract_address, nft_id):
     with mutex:
         try:
-            if os.path.isfile(config.registered_images_file):
-                with open(config.registered_images_file) as file:
-                    data = map(lambda s: s.split(','), file.readlines())
+            with open(config.registered_images_file) as file:
+                data = map(lambda s: s.split(','), file.readlines())
 
-                    for registered_contract_address, registered_nft_id, _ in data:
-                        if registered_contract_address == contract_address and registered_nft_id == nft_id:
-                            return 400, {'error': 'Already registered'}
+                for registered_contract_address, registered_nft_id, _ in data:
+                    if registered_contract_address == contract_address and registered_nft_id == nft_id:
+                        return 400, {'error': 'Already registered'}
 
             image_source, image_source_error = loader.get_image_source(contract_address, nft_id)
 
@@ -125,13 +123,12 @@ def register_new_image(contract_address, nft_id):
 def check_registered_image(contract_address, nft_id):
     with mutex:
         try:
-            if os.path.isfile(config.registered_images_file):
-                with open(config.registered_images_file) as file:
-                    data = map(lambda s: s.split(','), file.readlines())
+            with open(config.registered_images_file) as file:
+                data = map(lambda s: s.split(','), file.readlines())
 
-                    for registered_contract_address, registered_nft_id, _ in data:
-                        if registered_contract_address == contract_address and registered_nft_id == nft_id:
-                            return 200, {'is_registered': True}
+                for registered_contract_address, registered_nft_id, _ in data:
+                    if registered_contract_address == contract_address and registered_nft_id == nft_id:
+                        return 200, {'is_registered': True}
             return 200, {'is_registered': False}
         except Exception as e:
             return 500, {'error': e}
@@ -140,13 +137,11 @@ def check_registered_image(contract_address, nft_id):
 def get_rejected_images():
     with mutex:
         try:
-            if os.path.isfile(config.rejected_images_file):
-                with open(config.rejected_images_file) as file:
-                    data = map(lambda s: s.split(','), file.readlines())
+            with open(config.rejected_images_file) as file:
+                data = map(lambda s: s.split(','), file.readlines())
+                data = map(lambda a: {'contract_address': a[0], 'fnt_id': a[1]}, data)
 
-                return 200, data
-            else:
-                return 200, []
+            return 200, {'rejected_images': data}
         except Exception as e:
             return 500, {'error': e}
 
@@ -154,19 +149,18 @@ def get_rejected_images():
 def get_statistics():
     with mutex:
         try:
-            found_images_count = 0
-            precessed_imaged_count = 0
-            registered_images_count = 0
-            rejected_images_count = 0
+            with open(config.registered_images_file) as file:
+                registered_images_count = len(file.readlines()) or 0
+            with open(config.rejected_images_file) as file:
+                rejected_images_count = len(file.readlines()) or 0
 
-            if os.path.isfile(config.registered_images_file):
-                with open(config.registered_images_file) as file:
-                    registered_images_count = len(file.readlines())
-            if os.path.isfile(config.rejected_images_file):
-                with open(config.rejected_images_file) as file:
-                    rejected_images_count = len(file.readlines())
+            loader_response, loader_error = loader.get_statistics()
 
-            # TODO: get all statistics from loader
+            if not loader_response or loader_error:
+                raise loader_error
+            else:
+                found_images_count = loader_response.get('CountOfFound')
+                precessed_imaged_count = loader_response.get('CountOfDownloaded')
 
             return 200, {
                 'found_images_count': found_images_count,

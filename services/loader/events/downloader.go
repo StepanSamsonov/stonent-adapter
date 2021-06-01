@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/vladimir3322/stonent_go/config"
 	"github.com/vladimir3322/stonent_go/rabbitmq"
 	"github.com/vladimir3322/stonent_go/tools/models"
 	"io/ioutil"
@@ -19,7 +18,7 @@ func getImageSource(ipfsHost string, ipfsPath string) (string, error) {
 	ipfsMetadataUrl := ipfsHost + ipfsPath
 	imageMetadataRes, err := http.Get(ipfsMetadataUrl)
 
-	if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
+	if IsExceededImagesLimitCount() {
 		return "", errors.New("downloaded image limit exceeded")
 	}
 	if err != nil {
@@ -34,7 +33,7 @@ func getImageSource(ipfsHost string, ipfsPath string) (string, error) {
 	var jsonBody iImageMetadata
 	imageMetadataParserErr := json.NewDecoder(imageMetadataRes.Body).Decode(&jsonBody)
 
-	if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
+	if IsExceededImagesLimitCount() {
 		return "", errors.New("downloaded image limit exceeded")
 	}
 	if imageMetadataParserErr != nil {
@@ -43,7 +42,7 @@ func getImageSource(ipfsHost string, ipfsPath string) (string, error) {
 
 	parsedImageUrl, err := url.Parse(jsonBody.Image)
 
-	if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
+	if IsExceededImagesLimitCount() {
 		return "", errors.New("downloaded image limit exceeded")
 	}
 	if err != nil {
@@ -53,7 +52,7 @@ func getImageSource(ipfsHost string, ipfsPath string) (string, error) {
 	imageSourceUrl := ipfsHost + "/ipfs" + parsedImageUrl.Path
 	imageSourceRes, err := http.Get(imageSourceUrl)
 
-	if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
+	if IsExceededImagesLimitCount() {
 		return "", errors.New("downloaded image limit exceeded")
 	}
 	if err != nil {
@@ -67,7 +66,7 @@ func getImageSource(ipfsHost string, ipfsPath string) (string, error) {
 
 	imageSource, err := ioutil.ReadAll(imageSourceRes.Body)
 
-	if config.DownloadImageMaxCount != -1 && countOfDownloaded >= config.DownloadImageMaxCount {
+	if IsExceededImagesLimitCount() {
 		return "", errors.New("downloaded image limit exceeded")
 	}
 	if err != nil {
