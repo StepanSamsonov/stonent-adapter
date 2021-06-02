@@ -53,7 +53,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
 def get_adapter_result(contract_address, nft_id):
     def get_result(code, data=None, error=None):
         return {
-            'job_run_iD': f'{contract_address}_{nft_id}',
+            'job_run_id': f'{contract_address}_{nft_id}',
             'data': data,
             'error': error,
             'statusCode': code,
