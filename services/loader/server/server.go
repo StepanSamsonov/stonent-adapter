@@ -8,6 +8,7 @@ import (
 	"github.com/vladimir3322/stonent_go/config"
 	"github.com/vladimir3322/stonent_go/events"
 	"github.com/vladimir3322/stonent_go/tools/erc1155"
+	"io/ioutil"
 	"log"
 	"math/big"
 	"net/http"
@@ -19,7 +20,12 @@ func getImageSource(w http.ResponseWriter, r *http.Request) {
 
 	if address == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "Address query is required")
+		_, err := fmt.Fprintf(w, "address query is required")
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		return
 	}
 
@@ -27,7 +33,12 @@ func getImageSource(w http.ResponseWriter, r *http.Request) {
 
 	if id == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "Id query is required")
+		_, err := fmt.Fprintf(w, "id query is required")
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		return
 	}
 
@@ -36,7 +47,12 @@ func getImageSource(w http.ResponseWriter, r *http.Request) {
 
 	if !succeedParsedId {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintf(w, "Invalid id")
+		_, err := fmt.Fprintf(w, "invalid id")
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		return
 	}
 
@@ -44,7 +60,12 @@ func getImageSource(w http.ResponseWriter, r *http.Request) {
 
 	if ethErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, fmt.Sprint(ethErr))
+		_, err := fmt.Fprintf(w, fmt.Sprint(ethErr))
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		return
 	}
 
@@ -52,7 +73,12 @@ func getImageSource(w http.ResponseWriter, r *http.Request) {
 
 	if ercErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, fmt.Sprint(ercErr))
+		_, err := fmt.Fprintf(w, fmt.Sprint(ercErr))
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		return
 	}
 
@@ -60,18 +86,62 @@ func getImageSource(w http.ResponseWriter, r *http.Request) {
 
 	if downErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, fmt.Sprint(downErr))
+		_, err := fmt.Fprintf(w, fmt.Sprint(downErr))
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(imageSource))
+
+	_, err := w.Write([]byte(imageSource))
+
+	if err != nil {
+		fmt.Printf("error with server response writing: %s", err)
+	}
+}
+
+func getRejectedImagesByIPFS(w http.ResponseWriter, _ *http.Request) {
+	type Item struct {
+		ContractAddress string
+		NFTId string
+		IPFSHose string
+		IPFSPath string
+		Error string
+	}
+
+	events.Mutex.Lock()
+	defer events.Mutex.Unlock()
+
+	file, readErr := ioutil.ReadFile(config.RejectedImagesFile)
+
+	if readErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, err := fmt.Fprintf(w, fmt.Sprint(readErr))
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err := w.Write(file)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func getStatistics(w http.ResponseWriter, _ *http.Request) {
 	type IResponse struct {
 		CountOfFound int
 		CountOfDownloaded int
+		CountOfRejected int
 	}
 
 	events.Mutex.Lock()
@@ -80,23 +150,30 @@ func getStatistics(w http.ResponseWriter, _ *http.Request) {
 	var response = IResponse{
 		CountOfFound: events.CountOfFound,
 		CountOfDownloaded: events.CountOfDownloaded,
+		CountOfRejected: events.CountOfRejected,
 	}
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+
+	err := json.NewEncoder(w).Encode(response)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func Run() {
 	http.HandleFunc("/image_source", getImageSource)
+	http.HandleFunc("/rejected_images", getRejectedImagesByIPFS)
 	http.HandleFunc("/statistics", getStatistics)
 
 	err := http.ListenAndServe(":" + strconv.Itoa(config.ServerPort), nil)
 
 	if err != nil {
-		log.Fatal("Server starting:", err)
+		log.Fatal("server starting:", err)
 		return
 	}
 
-	fmt.Println("Loader server is here!")
+	fmt.Println("loader server is here!")
 }

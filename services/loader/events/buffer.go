@@ -17,6 +17,7 @@ var Buffer = make(chan BufferItem)
 var bufferSize = 0
 var CountOfFound = 0
 var CountOfDownloaded = 0
+var CountOfRejected = 0
 var Mutex = sync.Mutex{}
 
 func IsExceededImagesLimitCount() bool {

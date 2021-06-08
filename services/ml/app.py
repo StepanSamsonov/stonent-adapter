@@ -5,7 +5,7 @@ import config
 
 
 if __name__ == '__main__':
-    print('START ML', flush=True)
+    print('Start ML', flush=True)
     open(config.registered_images_file, 'w').close()
     open(config.rejected_images_file, 'w').close()
 

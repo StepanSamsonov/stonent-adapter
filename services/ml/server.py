@@ -6,9 +6,9 @@ import numpy
 import base64
 import cv2
 import config
+import globals
 from PIL import Image
 from urllib.parse import urlparse, parse_qs
-from globals import mutex, image_checker, image_manager
 
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -35,8 +35,10 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             contract_address = parsed_query.get('contract_address')[0]
             nft_id = parsed_query.get('nft_id')[0]
             status_code, response_body = check_registered_image(contract_address, nft_id)
-        elif parsed_url.path == '/get_rejected_images':
-            status_code, response_body = get_rejected_images()
+        elif parsed_url.path == '/rejected_images_by_nn':
+            status_code, response_body = get_rejected_images_by_nn()
+        elif parsed_url.path == '/rejected_images_by_ipfs':
+            status_code, response_body = get_rejected_images_by_ipfs()
         elif parsed_url.path == '/statistics':
             status_code, response_body = get_statistics()
 
@@ -59,7 +61,7 @@ def get_adapter_result(contract_address, nft_id):
             'statusCode': code,
         }
 
-    with mutex:
+    with globals.mutex:
         try:
             if not contract_address:
                 return get_result(400, None, 'Invalid contract address')
@@ -75,7 +77,7 @@ def get_adapter_result(contract_address, nft_id):
             image = cv2.imdecode(np_image_source, cv2.IMREAD_COLOR)
             image = Image.fromarray(image)
 
-            scores, descriptions = image_checker.find_most_similar_images(image)
+            scores, descriptions = globals.image_checker.find_most_similar_images(image)
 
             if not len(scores) or not len(descriptions):
                 return get_result(500, None, f'Invalid NN response: scores={scores}; description={descriptions}')
@@ -99,8 +101,13 @@ def get_adapter_result(contract_address, nft_id):
 
 
 def register_new_image(contract_address, nft_id):
-    with mutex:
+    with globals.mutex:
         try:
+            if not contract_address:
+                return 400, {'error': 'Invalid contract address'}
+            if not nft_id or not nft_id.isdigit():
+                return 400, {'error': 'Invalid nft id'}
+
             with open(config.registered_images_file) as file:
                 data = map(lambda s: s.split(','), file.readlines())
 
@@ -113,7 +120,7 @@ def register_new_image(contract_address, nft_id):
             if not image_source or image_source_error:
                 return 500, {'error': image_source_error}
 
-            image_manager.register_new_image(contract_address, nft_id, base64.b64decode(image_source))
+            globals.image_manager.register_new_image(contract_address, nft_id, base64.b64decode(image_source))
 
             return 200, {'error': None}
         except Exception as e:
@@ -121,8 +128,13 @@ def register_new_image(contract_address, nft_id):
 
 
 def check_registered_image(contract_address, nft_id):
-    with mutex:
+    with globals.mutex:
         try:
+            if not contract_address:
+                return 400, {'error': 'Invalid contract address'}
+            if not nft_id or not nft_id.isdigit():
+                return 400, {'error': 'Invalid nft id'}
+
             with open(config.registered_images_file) as file:
                 data = map(lambda s: s.split(','), file.readlines())
 
@@ -134,25 +146,51 @@ def check_registered_image(contract_address, nft_id):
             return 500, {'error': e}
 
 
-def get_rejected_images():
-    with mutex:
+def get_rejected_images_by_nn():
+    with globals.mutex:
         try:
             with open(config.rejected_images_file) as file:
                 data = map(lambda s: s.split(','), file.readlines())
-                data = map(lambda a: {'contract_address': a[0], 'fnt_id': a[1]}, data)
+                data = map(lambda a: {'contract_address': a[0], 'nft_id': a[1]}, data)
 
-            return 200, {'rejected_images': data}
+            return 200, {'rejected_images_by_nn': list(data)}
+        except Exception as e:
+            return 500, {'error': e}
+
+
+def get_rejected_images_by_ipfs():
+    with globals.mutex:
+        try:
+            data, loader_error = loader.get_rejected_images_bt_ipfs()
+
+            if loader_error:
+                return 500, {'error': loader_error}
+
+            data = data.split('\n')
+            data = filter(lambda s: len(s), data)
+            data = map(lambda s: s.split(','), data)
+
+            result = []
+
+            for contract_address, nft_id, description in data:
+                result.append({
+                    'contract_address': contract_address,
+                    'nft_id': nft_id,
+                    'description': description,
+                })
+
+            return 200, {'rejected_images_by_ipfs': result}
         except Exception as e:
             return 500, {'error': e}
 
 
 def get_statistics():
-    with mutex:
+    with globals.mutex:
         try:
             with open(config.registered_images_file) as file:
                 registered_images_count = len(file.readlines()) or 0
             with open(config.rejected_images_file) as file:
-                rejected_images_count = len(file.readlines()) or 0
+                rejected_by_nn_images_count = len(file.readlines()) or 0
 
             loader_response, loader_error = loader.get_statistics()
 
@@ -160,13 +198,18 @@ def get_statistics():
                 raise loader_error
             else:
                 found_images_count = loader_response.get('CountOfFound')
-                precessed_imaged_count = loader_response.get('CountOfDownloaded')
+                precessed_images_count = loader_response.get('CountOfDownloaded')
+                rejected_by_ipfs_images_count = loader_response.get('CountOfRejected')
 
             return 200, {
-                'found_images_count': found_images_count,
-                'precessed_imaged_count': precessed_imaged_count,
-                'registered_images_count': registered_images_count,
-                'rejected_images_count': rejected_images_count,
+                'statistics': {
+                    'found_images_count': found_images_count,
+                    'precessed_images_count': precessed_images_count,
+                    'registered_images_count': registered_images_count,
+                    'rejected_by_ipfs_images_count': rejected_by_ipfs_images_count,
+                    'rejected_by_nn_images_count': rejected_by_nn_images_count,
+                    'is_completed': globals.all_images_has_been_downloaded,
+                }
             }
         except Exception as e:
             return 500, {'error': e}
