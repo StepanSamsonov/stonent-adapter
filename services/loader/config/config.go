@@ -11,7 +11,7 @@ const RabbitHost = "rabbitmq"
 const RabbitPort = "5672"
 const QueueIndexing = "indexing"
 
-const RejectedImagesFile = "./rejected_images.txt"
+const MlUrl = "http://ml:9090"
 
-const DownloadImageBufferSize = 10
+const DownloadImageBufferSize = 4
 const DownloadImageMaxCount = -1 // -1 for ignoring

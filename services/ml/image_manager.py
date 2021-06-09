@@ -19,8 +19,10 @@ class ImageManager:
                 print(f'{contract_address},{nft_id},{pil_image.format}', file=file)
             print(f'Consumed by NN: {contract_address} {nft_id}', flush=True)
         except Exception as e:
-            with open(config.rejected_images_file, 'a') as file:
-                print(f'{contract_address},{nft_id}', file=file)
+            with open(config.rejected_images_by_NN_file, 'a') as file:
+                error = str(e).replace(',', '')
+
+                print(f'{contract_address},{nft_id},{error}', file=file)
             print("Error in registering new image", e, flush=True)
 
     def register_new_images(self, mutex):

@@ -12,4 +12,5 @@ rabbit_port = 5672
 rabbit_queue = "indexing"
 
 registered_images_file = './registered_images.txt'
-rejected_images_file = './rejected_images.txt'
+rejected_images_by_IPFS_file = './rejected_images_by_IPFS.txt'
+rejected_images_by_NN_file = './rejected_images_by_NN.txt'

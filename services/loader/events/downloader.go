@@ -5,13 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/vladimir3322/stonent_go/config"
+	"github.com/vladimir3322/stonent_go/ml"
 	"github.com/vladimir3322/stonent_go/rabbitmq"
 	"github.com/vladimir3322/stonent_go/tools/models"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"sync"
 )
 
@@ -102,30 +101,7 @@ func downloadImage(address string, nftId string, ipfsHost string, ipfsPath strin
 	imageSource, err := getImageSource(ipfsHost, ipfsPath)
 
 	if err != nil {
-		Mutex.Lock()
-		defer Mutex.Unlock()
-
-		CountOfRejected += 1
-
-		fmt.Println(err)
-
-		file, openErr := os.OpenFile(config.RejectedImagesFile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-
-		if openErr != nil {
-			fmt.Println(fmt.Sprintf("error with saving rejected images file %s %s %s: %s", address, nftId, openErr, err))
-		}
-
-		_, writeErr := file.WriteString(fmt.Sprintf("%s,%s,%s,%s,%s", address, nftId, ipfsHost, ipfsPath, err))
-
-		if writeErr != nil {
-			fmt.Println(fmt.Sprintf("error with saving rejected images file %s %s %s: %s", address, nftId, writeErr, err))
-		}
-
-		closeErr := file.Close()
-
-		if closeErr != nil {
-			fmt.Println(fmt.Sprintf("error with saving rejected images file %s %s %s: %s", address, nftId, closeErr, err))
-		}
+		ml.SentRejectedImageByIPFS(address, nftId, ipfsHost, ipfsPath, err)
 
 		return false
 	}

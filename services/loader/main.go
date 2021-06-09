@@ -11,17 +11,10 @@ import (
 	"github.com/vladimir3322/stonent_go/tools/erc1155"
 	"github.com/vladimir3322/stonent_go/tools/models"
 	"github.com/vladimir3322/stonent_go/tools/utils"
-	"os"
 	"sync"
 )
 
 func main() {
-	_, err := os.Create(config.RejectedImagesFile)
-
-	if err != nil {
-		panic(err)
-	}
-
 	go server.Run()
 	rabbitmq.InitRabbit()
 

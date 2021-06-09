@@ -8,7 +8,6 @@ import (
 	"github.com/vladimir3322/stonent_go/config"
 	"github.com/vladimir3322/stonent_go/events"
 	"github.com/vladimir3322/stonent_go/tools/erc1155"
-	"io/ioutil"
 	"log"
 	"math/big"
 	"net/http"
@@ -104,39 +103,6 @@ func getImageSource(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getRejectedImagesByIPFS(w http.ResponseWriter, _ *http.Request) {
-	type Item struct {
-		ContractAddress string
-		NFTId string
-		IPFSHose string
-		IPFSPath string
-		Error string
-	}
-
-	events.Mutex.Lock()
-	defer events.Mutex.Unlock()
-
-	file, readErr := ioutil.ReadFile(config.RejectedImagesFile)
-
-	if readErr != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, err := fmt.Fprintf(w, fmt.Sprint(readErr))
-
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	_, err := w.Write(file)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
 func getStatistics(w http.ResponseWriter, _ *http.Request) {
 	type IResponse struct {
 		CountOfFound int
@@ -144,13 +110,9 @@ func getStatistics(w http.ResponseWriter, _ *http.Request) {
 		CountOfRejected int
 	}
 
-	events.Mutex.Lock()
-	defer events.Mutex.Unlock()
-
 	var response = IResponse{
 		CountOfFound: events.CountOfFound,
 		CountOfDownloaded: events.CountOfDownloaded,
-		CountOfRejected: events.CountOfRejected,
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -165,7 +127,6 @@ func getStatistics(w http.ResponseWriter, _ *http.Request) {
 
 func Run() {
 	http.HandleFunc("/image_source", getImageSource)
-	http.HandleFunc("/rejected_images", getRejectedImagesByIPFS)
 	http.HandleFunc("/statistics", getStatistics)
 
 	err := http.ListenAndServe(":" + strconv.Itoa(config.ServerPort), nil)

@@ -17,16 +17,15 @@ var Buffer = make(chan BufferItem)
 var bufferSize = 0
 var CountOfFound = 0
 var CountOfDownloaded = 0
-var CountOfRejected = 0
-var Mutex = sync.Mutex{}
+var mutex = sync.Mutex{}
 
 func IsExceededImagesLimitCount() bool {
 	return config.DownloadImageMaxCount != -1 && CountOfDownloaded >= config.DownloadImageMaxCount
 }
 
 func pushToBuffer(item BufferItem) {
-	Mutex.Lock()
-	defer Mutex.Unlock()
+	mutex.Lock()
+	defer mutex.Unlock()
 
 	CountOfFound += 1
 
@@ -56,8 +55,8 @@ func RunBuffer() {
 				bufferSize -= 1
 
 				if isSucceed {
-					Mutex.Lock()
-					defer Mutex.Unlock()
+					mutex.Lock()
+					defer mutex.Unlock()
 
 					CountOfDownloaded += 1
 				}
