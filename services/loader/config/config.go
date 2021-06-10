@@ -3,7 +3,7 @@ package config
 const ServerPort = 8080
 const ProviderUrl = "wss://mainnet.infura.io/ws/v3/844de29fabee4fcebf315309262d0836"
 
-var IpfsLink = []string{"https://ipfs.daonomic.com", "https://ipfs.io"}
+var IpfsLink = []string{"https://ipfs.io", "https://ipfs.daonomic.com"}
 
 const RabbitLogin = "guest"
 const RabbitPass = "guest"

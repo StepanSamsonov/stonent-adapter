@@ -17,7 +17,8 @@ def connect_with_retry():
         else:
             raise Exception('Connection closed')
     except Exception as e:
-        print(f'Rabbit connection failed: "{e}", restarting', flush=True)
+        print(e)
+        print('Wait until Rabbit becomes alive', flush=True)
         time.sleep(1)
         return connect_with_retry()
 
@@ -28,7 +29,8 @@ def get_safe_consumer(connection, queue):
 
         return channel, channel.consume(queue)
     except Exception as e:
-        print(f'Rabbit connection failed: "{e}", restarting', flush=True)
+        print(e)
+        print('Wait until Rabbit becomes alive', flush=True)
         time.sleep(1)
         return get_safe_consumer(connection, queue)
 
@@ -44,7 +46,8 @@ def safe_consume(queue):
 
                 yield method_frame, properties, body
         except Exception as e:
-            print(f'Failed to consume from Rabbit: "{e}", retrying', flush=True)
+            print(e)
+            print('Wait until Rabbit becomes alive', flush=True)
             connection = connect_with_retry()
             channel, consumer = get_safe_consumer(connection, queue)
 

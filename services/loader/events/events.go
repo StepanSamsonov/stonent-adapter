@@ -29,8 +29,7 @@ func GetById(contract *erc1155.Erc1155, id *big.Int) (string, error) {
 		return "", errors.New("event not found")
 	}
 
-	// TODO: set to 0
-	imageSource, err := getImageSource(config.IpfsLink[len(config.IpfsLink)-1], event.Event.Value)
+	imageSource, err := getImageSource(config.IpfsLink[0], event.Event.Value)
 
 	if err != nil {
 		return "", err
@@ -64,7 +63,7 @@ func GetEvents(address string, contract *erc1155.Erc1155, startBlock uint64, end
 			waiter.Add(1)
 			go GetEvents(address, contract, startBlock, middleBlock, waiter)
 			waiter.Add(1)
-			go GetEvents(address, contract, middleBlock + 1, endBlock, waiter)
+			go GetEvents(address, contract, middleBlock+1, endBlock, waiter)
 			return
 		}
 
@@ -117,7 +116,7 @@ func ListenEvents(address string, contract *erc1155.Erc1155, startBlock uint64) 
 		case err := <-watcher.Err():
 			fmt.Println("failed listening events:", err)
 		case Event := <-ch:
-			fmt.Println(Event.Value)
+			fmt.Println(fmt.Sprintf("received event from listening: %s", Event.Id))
 
 			go downloadImage(address, Event.Id.String(), config.IpfsLink[ipfsNodeIndex], Event.Value)
 

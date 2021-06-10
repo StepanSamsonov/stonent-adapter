@@ -15,7 +15,7 @@ func InitRabbit() *amqp.Connection {
 	rabbitConn, err = amqp.Dial(rabbitAddr)
 
 	if err != nil {
-		fmt.Println("Rabbit connection failed, restarting")
+		fmt.Println("Wait until Rabbit becomes alive")
 		time.Sleep(time.Second)
 		return InitRabbit()
 	}
