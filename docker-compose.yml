@@ -2,13 +2,15 @@ version: '3'
 
 services:
   ml:
-    build: ./services/ml
+#    build: ./services/ml
+    image: stonent/adapter-ml
     ports:
       - 80:9090
     depends_on:
       - rabbitmq
   loader:
-    build: ./services/loader
+#    build: ./services/loader
+    image: stonent/adapter-loader
     depends_on:
       - rabbitmq
       - ml
