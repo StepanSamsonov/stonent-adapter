@@ -94,6 +94,11 @@ func downloadImageWithWaiter(address string, nftId string, ipfsHost string, ipfs
 	defer waiter.Done()
 
 	isSucceed := downloadImage(address, nftId, ipfsHost, ipfsPath)
+
+	if isSucceed {
+		CountOfDownloaded += 1
+	}
+
 	cb(isSucceed)
 }
 

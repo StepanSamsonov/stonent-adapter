@@ -3,17 +3,15 @@ version: '3'
 services:
   ml:
     build: ./services/ml
-#    image: stonent/adapter-ml
     ports:
-      - 9090:9090
+      - 80:9090
     depends_on:
       - rabbitmq
-      - loader
   loader:
     build: ./services/loader
-#    image: stonent/adapter-loader
     depends_on:
       - rabbitmq
+      - ml
   rabbitmq:
     container_name: rabbitmq
     image: rabbitmq:3-management-alpine

@@ -53,13 +53,6 @@ func RunBuffer() {
 
 			go downloadImageWithWaiter(item.address, item.nftId, item.ipfsHost, item.ipfsPath, item.waiter, func(isSucceed bool) {
 				bufferSize -= 1
-
-				if isSucceed {
-					mutex.Lock()
-					defer mutex.Unlock()
-
-					CountOfDownloaded += 1
-				}
 			})
 		}
 	}

@@ -67,8 +67,8 @@ def consume_events():
 
         if is_finite:
             globals.all_images_has_been_downloaded = True
-            print('End Rabbit', flush=True)
-            return
+            print('Actual images have been downloaded', flush=True)
+            continue
 
         print('Received from Rabbit:', nft_id, contract_address, flush=True)
 

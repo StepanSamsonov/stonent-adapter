@@ -25,7 +25,7 @@ func main() {
 	ethConnection, err := ethclient.Dial(config.ProviderUrl)
 
 	if err != nil {
-		fmt.Printf("whoops something went wrong: %s", err)
+		fmt.Println(fmt.Sprintf("whoops something went wrong: %s", err))
 	}
 
 	latestBlock := api.GetLatestBlock(ethConnection)
@@ -65,7 +65,7 @@ func getEvents(ethConnection *ethclient.Client, address string, startBlock uint6
 	contract, err := erc1155.NewErc1155(common.HexToAddress(address), ethConnection)
 
 	if err != nil {
-		fmt.Printf("whoops something went wrong: %s", err)
+		fmt.Println(fmt.Sprintf("whoops something went wrong: %s", err))
 	}
 
 	var waiter = &sync.WaitGroup{}
@@ -81,7 +81,7 @@ func listenEvents(ethConnection *ethclient.Client, address string, startBlock ui
 	contract, err := erc1155.NewErc1155(common.HexToAddress(address), ethConnection)
 
 	if err != nil {
-		fmt.Printf("whoops something went wrong: %s", err)
+		fmt.Println(fmt.Sprintf("whoops something went wrong: %s", err))
 	}
 
 	events.ListenEvents(address, contract, startBlock)

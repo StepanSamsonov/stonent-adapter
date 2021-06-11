@@ -3,7 +3,7 @@ import nmslib
 import numpy as np
 
 from torch import nn
-from PIL import Image
+from PIL import Image, ImageSequence
 from torchvision import transforms
 from scipy.stats import logistic
 
@@ -31,7 +31,7 @@ class NNImageChecker:
         self._index = nmslib.init(method='hnsw', space='cosinesimil')
         self._feature_dict = {}
 
-    def _get_features(self, pil_image):
+    def _get_image_features(self, pil_image):
         """
         :param pil_image: image loaded py PIL library.
         :return: array of features for the image
@@ -48,6 +48,18 @@ class NNImageChecker:
             input_image = self.preprocess(Image.fromarray(image))
 
             return self.feature_extractor(input_image[None, :])[0].reshape(-1)
+
+    def _get_features(self, pil_object):
+        """
+        :param pil_object: oblect loaded py PIL library.
+        :return: array of features for the image
+        """
+        features_list = []
+        for frame in ImageSequence.Iterator(pil_object):
+            features = self._get_image_features(frame)
+            features_list.append(features)
+        features = sum(features_list) / len(features_list)
+        return features
 
     def _transform_scores(self, scores):
         """

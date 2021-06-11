@@ -30,3 +30,16 @@ func getRabbitConn() *amqp.Connection {
 	}
 	return rabbitConn
 }
+
+func getRabbitChannel() *amqp.Channel {
+	conn := getRabbitConn()
+	channel, err := conn.Channel()
+
+	if err != nil {
+		time.Sleep(time.Second)
+
+		return getRabbitChannel()
+	}
+
+	return channel
+}
