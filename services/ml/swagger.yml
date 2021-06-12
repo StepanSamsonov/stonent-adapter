@@ -3,7 +3,8 @@ info:
   title: Stonent ML
   version: '1.0'
 servers:
-  - url: 'http://localhost:80'
+  - url: 'http://localhost'
+  - url: 'http://ec2-3-15-13-71.us-east-2.compute.amazonaws.com'
 
 paths:
   '/check':

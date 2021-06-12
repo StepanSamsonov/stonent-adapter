@@ -11,5 +11,5 @@ const QueueIndexing = "indexing"
 
 const MlUrl = "http://ml:9090"
 
-const DownloadImageBufferSize = 4
-const DownloadImageMaxCount = -1 // -1 for ignoring
+const DownloadImageBufferSize = 100
+const DownloadImageMaxCount = 1000 // -1 for ignoring

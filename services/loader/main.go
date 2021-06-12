@@ -24,21 +24,21 @@ func main() {
 	var completedContracts = 0
 
 	ethConnection := eth.GetEthClient()
+
+	// Все картины
+	//startBlockNumber := 0
+	//latestBlockNumber := eth.GetLatestBlockNumber(ethConnection)
+
+	// Много картин
+	startBlockNumber := uint64(12291943)
 	latestBlockNumber := eth.GetLatestBlockNumber(ethConnection)
 
+	// 4 картины
+	//startBlockNumber := 12291940
+	//latestBlockNumber := 12291943
+
 	for _, contractAddress := range contractsAddresses {
-		//go getEvents(ethConnection, contractAddress, 12291940, 12291943, func() {
-		//	completedContracts += 1
-		//
-		//	if len(contractsAddresses) == completedContracts {
-		//		fmt.Println("loader completed successfully")
-		//
-		//		rabbitmq.SendNFTToRabbit(models.NFT{
-		//			IsFinite: true,
-		//		})
-		//	}
-		//}) // 4 картины
-		go getEvents(ethConnection, contractAddress, 0, latestBlockNumber, func() {
+		go getEvents(ethConnection, contractAddress, startBlockNumber, latestBlockNumber, func() {
 			completedContracts += 1
 
 			if len(contractsAddresses) == completedContracts {
@@ -48,7 +48,7 @@ func main() {
 					IsFinite: true,
 				})
 			}
-		}) // Все картины
+		})
 
 		go events.ListenEvents(contractAddress, latestBlockNumber)
 	}
