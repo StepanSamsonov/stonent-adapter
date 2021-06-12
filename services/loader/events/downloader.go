@@ -16,9 +16,6 @@ import (
 func getImageSource(ipfsPath string) (string, error) {
 	imageMetadataRes, err := ipfs.Get(ipfsPath)
 
-	if IsExceededImagesLimitCount() {
-		return "", errors.New("downloaded image limit exceeded")
-	}
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("error with %s: %s", ipfsPath, err))
 	}
@@ -26,33 +23,20 @@ func getImageSource(ipfsPath string) (string, error) {
 	var jsonBody iImageMetadata
 	imageMetadataParserErr := json.Unmarshal(imageMetadataRes, &jsonBody)
 
-	if IsExceededImagesLimitCount() {
-		return "", errors.New("downloaded image limit exceeded")
-	}
 	if imageMetadataParserErr != nil {
 		return "", errors.New(fmt.Sprintf("error with %s: %s", ipfsPath, imageMetadataParserErr))
 	}
 
 	parsedImageUrl, err := url.Parse(jsonBody.Image)
 
-	if IsExceededImagesLimitCount() {
-		return "", errors.New("downloaded image limit exceeded")
-	}
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("error with %s: %s", ipfsPath, err))
 	}
 
 	imageSourceRes, err := ipfs.Get(parsedImageUrl.Path[1:])
 
-	if IsExceededImagesLimitCount() {
-		return "", errors.New("downloaded image limit exceeded")
-	}
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("error with %s %s: %s", ipfsPath, parsedImageUrl.Path, err))
-	}
-
-	if IsExceededImagesLimitCount() {
-		return "", errors.New("downloaded image limit exceeded")
 	}
 
 	b64ImageSource := base64.StdEncoding.EncodeToString(imageSourceRes)
