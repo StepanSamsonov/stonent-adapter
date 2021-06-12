@@ -4,9 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/vladimir3322/stonent_go/config"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/vladimir3322/stonent_go/eth"
 	"github.com/vladimir3322/stonent_go/tools/erc1155"
 	"math/big"
+	"strings"
 	"sync"
 )
 
@@ -29,7 +32,8 @@ func GetById(contract *erc1155.Erc1155, id *big.Int) (string, error) {
 		return "", errors.New("event not found")
 	}
 
-	imageSource, err := getImageSource(config.IpfsLink[0], event.Event.Value)
+	ipfsPath := strings.ReplaceAll(event.Event.Value, "/ipfs/", "")
+	imageSource, err := getImageSource(ipfsPath)
 
 	if err != nil {
 		return "", err
@@ -68,7 +72,6 @@ func GetEvents(address string, contract *erc1155.Erc1155, startBlock uint64, end
 		}
 
 		notEmpty := true
-		ipfsNodeIndex := 0
 
 		for notEmpty {
 			if IsExceededImagesLimitCount() {
@@ -81,16 +84,14 @@ func GetEvents(address string, contract *erc1155.Erc1155, startBlock uint64, end
 			if notEmpty {
 				waiter.Add(1)
 
+				ipfsPath := strings.ReplaceAll(past.Event.Value, "/ipfs/", "")
+
 				go pushToBuffer(BufferItem{
 					address:  address,
 					nftId:    past.Event.Id.String(),
-					ipfsHost: config.IpfsLink[ipfsNodeIndex],
-					ipfsPath: past.Event.Value,
+					ipfsPath: ipfsPath,
 					waiter:   waiter,
 				})
-
-				ipfsNodeIndex += 1
-				ipfsNodeIndex %= len(config.IpfsLink)
 			}
 		}
 	} else {
@@ -98,7 +99,14 @@ func GetEvents(address string, contract *erc1155.Erc1155, startBlock uint64, end
 	}
 }
 
-func ListenEvents(address string, contract *erc1155.Erc1155, startBlock uint64) {
+func listenByWatcher(ethClient *ethclient.Client, address string, startBlock uint64) {
+	contract, err := erc1155.NewErc1155(common.HexToAddress(address), ethClient)
+
+	if err != nil {
+		fmt.Println(fmt.Sprintf("failed listening events: %s", err))
+		return
+	}
+
 	var s []*big.Int
 
 	opts := &bind.WatchOpts{Start: &startBlock}
@@ -106,22 +114,31 @@ func ListenEvents(address string, contract *erc1155.Erc1155, startBlock uint64) 
 	watcher, err := contract.WatchURI(opts, ch, s)
 
 	if err != nil {
-		fmt.Println("failed listening events:", err)
+		fmt.Println(fmt.Sprintf("failed listening events: %s", err))
+		return
 	}
-
-	ipfsNodeIndex := 0
 
 	for {
 		select {
 		case err := <-watcher.Err():
-			fmt.Println("failed listening events:", err)
+			fmt.Println(fmt.Sprintf("failed listening events: %s, restarting", err))
+			return
 		case Event := <-ch:
 			fmt.Println(fmt.Sprintf("received event from listening: %s", Event.Id))
 
-			go downloadImage(address, Event.Id.String(), config.IpfsLink[ipfsNodeIndex], Event.Value)
+			ipfsPath := strings.ReplaceAll(Event.Value, "/ipfs/", "")
 
-			ipfsNodeIndex += 1
-			ipfsNodeIndex %= len(config.IpfsLink)
+			go downloadImage(address, Event.Id.String(), ipfsPath)
 		}
+	}
+}
+
+func ListenEvents(address string, startBlock uint64) {
+	for {
+		ethClient := eth.GetEthClient()
+
+		listenByWatcher(ethClient, address, startBlock)
+
+		startBlock = eth.GetLatestBlockNumber(ethClient)
 	}
 }
