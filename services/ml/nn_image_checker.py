@@ -49,17 +49,20 @@ class NNImageChecker:
 
             return self.feature_extractor(input_image[None, :])[0].reshape(-1)
 
-    def _get_features(self, pil_object):
+    def _get_features(self, pil_image):
         """
-        :param pil_object: oblect loaded py PIL library.
+        :param pil_image: image loaded py PIL library.
         :return: array of features for the image
         """
-        features_list = []
-        for frame in ImageSequence.Iterator(pil_object):
-            features = self._get_image_features(frame)
-            features_list.append(features)
-        features = sum(features_list) / len(features_list)
-        return features
+        with torch.no_grad():
+            image = np.array(pil_image)
+            if image.ndim == 2:
+                image = image[..., None]
+                image = np.concatenate([image, image, image], -1)
+            if image.shape[-1] == 4:
+                image = image[..., :3]
+            input_image = self.preprocess(Image.fromarray(image))
+            return self.feature_extractor(input_image[None, :])[0].reshape(-1)
 
     def _transform_scores(self, scores):
         """

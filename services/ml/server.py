@@ -82,7 +82,7 @@ def get_adapter_result(contract_address, nft_id):
         return {
             'job_run_id': f'{contract_address}_{nft_id}',
             'data': data,
-            'error': error,
+            'error': str(error),
             'statusCode': code,
         }
 
