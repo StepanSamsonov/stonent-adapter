@@ -70,6 +70,6 @@ def consume_events():
             print('Actual images have been downloaded', flush=True)
             continue
 
-        print('Received from Rabbit:', nft_id, contract_address, flush=True)
+        print('Received from Rabbit:', contract_address, nft_id, flush=True)
 
         yield contract_address, nft_id, image_bytes_source

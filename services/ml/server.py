@@ -1,3 +1,6 @@
+from PIL import Image
+from urllib.parse import urlparse, parse_qs
+from postgres import RegisteredImages, RejectedImagesByIPFS, RejectedImagesByNN
 import http.server
 import socketserver
 import json
@@ -7,11 +10,9 @@ import base64
 import cv2
 import config
 import globals
-from PIL import Image
-from urllib.parse import urlparse, parse_qs
 
 
-class RequestHandler(http.server.SimpleHTTPRequestHandler):
+class RequestHandler(http.server.BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -30,13 +31,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         status_code = 404
         response_body = {'error': 'Not found'}
 
-        if parsed_url.path == '/check':
-            contract_address = extract_query(parsed_query, 'contract_address')
-            nft_id = extract_query(parsed_query, 'nft_id')
-
-            response_body = get_adapter_result(contract_address, nft_id)
-            status_code = 200
-        elif parsed_url.path == '/register_new_image':
+        if parsed_url.path == '/register_new_image':
             contract_address = extract_query(parsed_query, 'contract_address')
             nft_id = extract_query(parsed_query, 'nft_id')
 
@@ -48,18 +43,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             status_code, response_body = check_registered_image(contract_address, nft_id)
         elif parsed_url.path == '/registered_images':
             status_code, response_body = get_registered_images()
-        elif parsed_url.path == '/register_rejected_image_by_ipfs':
-            contract_address = extract_query(parsed_query, 'contract_address')
-            nft_id = extract_query(parsed_query, 'nft_id')
-            ipfs_path = extract_query(parsed_query, 'ipfs_path')
-            error = extract_query(parsed_query, 'error')
-
-            status_code, response_body = register_rejected_image_by_ipfs(
-                contract_address,
-                nft_id,
-                ipfs_path,
-                error
-            )
         elif parsed_url.path == '/rejected_images_by_nn':
             status_code, response_body = get_rejected_images_by_nn()
         elif parsed_url.path == '/rejected_images_by_ipfs':
@@ -76,14 +59,41 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(response)
         return
 
+    def do_POST(self):
+        parsed_url = urlparse(self.path)
 
-def get_adapter_result(contract_address, nft_id):
+        status_code = 404
+        response_body = {'error': 'Not found'}
+
+        if parsed_url.path == '/check':
+            content_len = int(self.headers.get('Content-Length'))
+            body = self.rfile.read(content_len)
+            body = json.loads(body)
+
+            job_id = body.get('id')
+            data = body.get('data') or dict()
+            contract_address = data.get('contract_address')
+            nft_id = data.get('nft_id')
+
+            response_body = get_adapter_result(job_id, contract_address, nft_id)
+            status_code = 200
+
+        response = json.dumps(response_body)
+        response = bytes(response, 'utf8')
+
+        self.send_response(status_code)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(response)
+
+
+def get_adapter_result(job_id, contract_address, nft_id):
     def get_result(code, data=None, error=None):
         return {
-            'job_run_id': f'{contract_address}_{nft_id}',
+            'jobRunID': job_id,
+            'statusCode': code,
             'data': data,
             'error': str(error),
-            'statusCode': code,
         }
 
     with globals.mutex:
@@ -133,17 +143,21 @@ def register_new_image(contract_address, nft_id):
             if not nft_id or not nft_id.isdigit():
                 return 400, {'error': 'Invalid nft id'}
 
-            with open(config.registered_images_file) as file:
-                data = map(lambda s: s.split(','), file.readlines())
+            already_registered_filter = RegisteredImages.filter(
+                filter={
+                    'contract_address': contract_address,
+                    'nft_id': nft_id,
+                }
+            )
+            already_registered = already_registered_filter.total
 
-                for registered_contract_address, registered_nft_id, _ in data:
-                    if registered_contract_address == contract_address and registered_nft_id == nft_id:
-                        return 400, {'error': 'Already registered'}
+            if already_registered:
+                return 400, {'error': 'Already registered'}
 
             image_source, image_source_error = loader.get_image_source(contract_address, nft_id)
 
             if not image_source or image_source_error:
-                return 500, {'error': image_source_error}
+                return 500, {'error': image_source_error or 'Image source is empty'}
 
             globals.image_manager.register_new_image(contract_address, nft_id, base64.b64decode(image_source))
 
@@ -160,72 +174,39 @@ def check_registered_image(contract_address, nft_id):
             if not nft_id or not nft_id.isdigit():
                 return 400, {'error': 'Invalid nft id'}
 
-            with open(config.registered_images_file) as file:
-                data = map(lambda s: s.split(','), file.readlines())
+            already_registered_filter = RegisteredImages.filter(
+                filter={
+                    'contract_address': contract_address,
+                    'nft_id': nft_id,
+                }
+            )
+            already_registered = already_registered_filter.total
 
-                for registered_contract_address, registered_nft_id, _ in data:
-                    if registered_contract_address == contract_address and registered_nft_id == nft_id:
-                        return 200, {'is_registered': True}
-            return 200, {'is_registered': False}
-        except Exception as e:
-            return 500, {'error': e}
-
-
-def register_rejected_image_by_ipfs(contract_address, nft_id, ipfs_path, error):
-    with globals.mutex:
-        if not contract_address:
-            return 400, {'error': 'contract_address is required'}
-        if not nft_id:
-            return 400, {'error': 'nft_id is required'}
-        if not ipfs_path:
-            return 400, {'error': 'ipfs_path is required'}
-        if not error:
-            return 400, {'error': 'error is required'}
-
-        try:
-            with open(config.rejected_images_by_IPFS_file, 'a') as file:
-                error = error.replace(',', '')
-                print(f'{contract_address},{nft_id},{ipfs_path},{error}', file=file)
-            return 200, {'error': None}
+            return 200, {'is_registered': not not already_registered}
         except Exception as e:
             return 500, {'error': e}
 
 
 def get_registered_images():
-    def map_list_to_dict(item):
-        return {
-            'contract_address': item[0],
-            'nft_id': item[1],
-            'format': item[2],
-        }
-
     with globals.mutex:
         try:
-            with open(config.registered_images_file) as file:
-                data = map(lambda s: s.rstrip().split(','), file.readlines())
-                data = map(map_list_to_dict, data)
+            registered_images = RegisteredImages.all()
+            registered_images = map(lambda x: x.to_dict(), registered_images)
+            registered_images = list(registered_images)
 
-            return 200, {'registered_images': list(data)}
+            return 200, {'registered_images': registered_images}
         except Exception as e:
             return 500, {'error': e}
 
 
 def get_rejected_images_by_ipfs():
-    def map_list_to_dict(item):
-        return {
-            'contract_address': item[0],
-            'nft_id': item[1],
-            'ipfs_path': item[2],
-            'description': item[3],
-        }
-
     with globals.mutex:
         try:
-            with open(config.rejected_images_by_IPFS_file) as file:
-                data = map(lambda s: s.rstrip().split(','), file.readlines())
-                data = map(map_list_to_dict, data)
+            rejected_images_by_ipfs = RejectedImagesByIPFS.all()
+            rejected_images_by_ipfs = map(lambda x: x.to_dict(), rejected_images_by_ipfs)
+            rejected_images_by_ipfs = list(rejected_images_by_ipfs)
 
-            return 200, {'rejected_images_by_nn': list(data)}
+            return 200, {'rejected_images_by_ipfs': rejected_images_by_ipfs}
         except Exception as e:
             return 500, {'error': e}
 
@@ -233,11 +214,11 @@ def get_rejected_images_by_ipfs():
 def get_rejected_images_by_nn():
     with globals.mutex:
         try:
-            with open(config.rejected_images_by_NN_file) as file:
-                data = map(lambda s: s.rstrip().split(','), file.readlines())
-                data = map(lambda a: {'contract_address': a[0], 'nft_id': a[1], 'description': a[2]}, data)
+            rejected_images_by_nn = RejectedImagesByNN.all()
+            rejected_images_by_nn = map(lambda x: x.to_dict(), rejected_images_by_nn)
+            rejected_images_by_nn = list(rejected_images_by_nn)
 
-            return 200, {'rejected_images_by_nn': list(data)}
+            return 200, {'rejected_images_by_nn': rejected_images_by_nn}
         except Exception as e:
             return 500, {'error': e}
 
@@ -245,12 +226,14 @@ def get_rejected_images_by_nn():
 def get_statistics():
     with globals.mutex:
         try:
-            with open(config.registered_images_file) as file:
-                registered_images_count = len(file.readlines()) or 0
-            with open(config.rejected_images_by_IPFS_file) as file:
-                rejected_by_ipfs_images_count = len(file.readlines()) or 0
-            with open(config.rejected_images_by_NN_file) as file:
-                rejected_by_nn_images_count = len(file.readlines()) or 0
+            registered_images = RegisteredImages.filter()
+            registered_images_count = registered_images.total
+
+            rejected_by_ipfs_images = RejectedImagesByIPFS.filter()
+            rejected_by_ipfs_images_count = rejected_by_ipfs_images.total
+
+            rejected_by_nn_images = RejectedImagesByNN.filter()
+            rejected_by_nn_images_count = rejected_by_nn_images.total
 
             loader_response, loader_error = loader.get_statistics()
 

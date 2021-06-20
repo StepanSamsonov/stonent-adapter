@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/vladimir3322/stonent_go/ipfs"
-	"github.com/vladimir3322/stonent_go/ml"
+	"github.com/vladimir3322/stonent_go/postgres"
 	"github.com/vladimir3322/stonent_go/rabbitmq"
 	"github.com/vladimir3322/stonent_go/tools/models"
 	"net/url"
@@ -60,16 +60,16 @@ func downloadImage(address string, nftId string, ipfsPath string) bool {
 	imageSource, err := getImageSource(ipfsPath)
 
 	if err != nil {
-		ml.SentRejectedImageByIPFS(address, nftId, ipfsPath, err)
+		postgres.SaveRejectedImageByIPFS(address, nftId, ipfsPath, err)
 
 		return false
 	}
 
 	rabbitmq.SendNFTToRabbit(models.NFT{
-		NFTID:           nftId,
+		NFTID: nftId,
 		ContractAddress: address,
-		Data:            imageSource,
-		IsFinite:        false,
+		Data: imageSource,
+		IsFinite: false,
 	})
 
 	return true

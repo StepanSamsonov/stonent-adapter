@@ -3,7 +3,7 @@ import nmslib
 import numpy as np
 
 from torch import nn
-from PIL import Image, ImageSequence
+from PIL import Image
 from torchvision import transforms
 from scipy.stats import logistic
 

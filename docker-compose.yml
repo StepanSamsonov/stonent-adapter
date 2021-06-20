@@ -3,20 +3,23 @@ version: '3'
 services:
   ml:
     image: stonent/adapter-ml
-    ports:
-      - 80:9090
     depends_on:
       - rabbitmq
+      - postgres
   loader:
     image: stonent/adapter-loader
     depends_on:
       - rabbitmq
+      - postgres
       - ml
   rabbitmq:
     image: stonent/adapter-rabbitmq
     restart: always
     volumes:
       - rabbitmq:/var/lib/rabbitmq
+  postgres:
+      image: stonent/adapter-postgres
+      restart: always
 
 volumes:
   rabbitmq:

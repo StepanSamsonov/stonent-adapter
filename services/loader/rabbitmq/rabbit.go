@@ -9,7 +9,7 @@ import (
 
 var rabbitConn *amqp.Connection
 
-func InitRabbit() *amqp.Connection {
+func Init() *amqp.Connection {
 	var err error
 	rabbitAddr := fmt.Sprintf("amqp://%s:%s@%s:%s/", config.RabbitLogin, config.RabbitPass, config.RabbitHost, config.RabbitPort)
 	rabbitConn, err = amqp.Dial(rabbitAddr)
@@ -17,7 +17,7 @@ func InitRabbit() *amqp.Connection {
 	if err != nil {
 		fmt.Println("Wait until Rabbit becomes alive")
 		time.Sleep(time.Second)
-		return InitRabbit()
+		return Init()
 	}
 
 	fmt.Println("Successfully connected to Rabbit")
@@ -26,7 +26,7 @@ func InitRabbit() *amqp.Connection {
 
 func getRabbitConn() *amqp.Connection {
 	if rabbitConn == nil {
-		return InitRabbit()
+		return Init()
 	}
 	return rabbitConn
 }

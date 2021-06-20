@@ -1,24 +1,28 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/vladimir3322/stonent_go/eth"
 	"github.com/vladimir3322/stonent_go/events"
 	"github.com/vladimir3322/stonent_go/ipfs"
+	"github.com/vladimir3322/stonent_go/postgres"
 	"github.com/vladimir3322/stonent_go/rabbitmq"
 	"github.com/vladimir3322/stonent_go/server"
 	"github.com/vladimir3322/stonent_go/tools/erc1155"
 	"github.com/vladimir3322/stonent_go/tools/models"
 	"github.com/vladimir3322/stonent_go/tools/utils"
 	"sync"
+	"time"
 )
 
 func main() {
 	go server.Run()
-	rabbitmq.InitRabbit()
+	rabbitmq.Init()
 	ipfs.Init()
+	postgres.Init()
 
 	var contractsAddresses = []string{"0xd07dc4262bcdbf85190c01c996b4c06a461d2430"}
 	var completedContracts = 0
@@ -30,12 +34,12 @@ func main() {
 	//latestBlockNumber := eth.GetLatestBlockNumber(ethConnection)
 
 	// Много картин
-	startBlockNumber := uint64(12291943)
-	latestBlockNumber := eth.GetLatestBlockNumber(ethConnection)
+	//startBlockNumber := uint64(12291943)
+	//latestBlockNumber := eth.GetLatestBlockNumber(ethConnection)
 
 	// 4 картины
-	//startBlockNumber := 12291940
-	//latestBlockNumber := 12291943
+    startBlockNumber := uint64(12291940)
+    latestBlockNumber := uint64(12291943)
 
 	for _, contractAddress := range contractsAddresses {
 		go getEvents(ethConnection, contractAddress, startBlockNumber, latestBlockNumber, func() {

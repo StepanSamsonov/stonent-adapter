@@ -3,16 +3,15 @@ info:
   title: Stonent ML
   version: '1.0'
 servers:
-  - url: 'http://localhost'
+  - url: 'http://localhost:9090'
   - url: 'http://ec2-3-15-13-71.us-east-2.compute.amazonaws.com'
 
 paths:
   '/check':
-    get:
+    post:
       summary: Call adapter result
-      parameters:
-        - $ref: '#/components/parameters/contract_address'
-        - $ref: '#/components/parameters/nft_id'
+      requestBody:
+        $ref: '#/components/requestBodies/CheckRequestBody'
       responses:
         '200':
           description: Retrieve adapter result
@@ -151,6 +150,44 @@ components:
       schema:
         type: string
       example: '507779'
+
+  requestBodies:
+    CheckRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+              data:
+                type: object
+                properties:
+                  contract_address:
+                    type: string
+                  nft_id:
+                    type: string
+                required:
+                  - contract_address
+                  - nft_id
+            required:
+              - id
+              - data
+
+    RegisterRejectedImageByIPFSRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              contract_address:
+                type: string
+              nft_id:
+                type: string
+              description:
+                type: string
 
   schemas:
     GetAdapterResponse:

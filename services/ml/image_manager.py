@@ -1,7 +1,7 @@
 from PIL import Image
 from io import BytesIO
+from postgres import RegisteredImages, RejectedImagesByNN
 import rabbitmq
-import config
 
 
 class ImageManager:
@@ -10,19 +10,36 @@ class ImageManager:
 
     def register_new_image(self, contract_address, nft_id, bytes_source):
         try:
+            if not bytes_source:
+                return
+
+            duplicated_images = RegisteredImages.filter(
+                filter={
+                    'contract_address': contract_address,
+                    'nft_id': nft_id,
+                }
+            )
+
+            if duplicated_images.total:
+                return
+
             pil_image = Image.open(BytesIO(bytes_source))
             description = f'{str(contract_address)}-{str(nft_id)}'
 
             self.image_checker.add_image_to_storage(pil_image, description)
 
-            with open(config.registered_images_file, 'a') as file:
-                print(f'{contract_address},{nft_id},{pil_image.format}', file=file)
+            RegisteredImages.add({
+                'contract_address': contract_address,
+                'nft_id': nft_id,
+                'format': pil_image.format,
+            })
             print(f'Consumed by NN: {contract_address} {nft_id}', flush=True)
         except Exception as e:
-            with open(config.rejected_images_by_NN_file, 'a') as file:
-                error = str(e).replace(',', '')
-
-                print(f'{contract_address},{nft_id},{error}', file=file)
+            RejectedImagesByNN.add({
+                'contract_address': contract_address,
+                'nft_id': nft_id,
+                'description': e,
+            })
             print("Error in registering new image", e, flush=True)
 
     def register_new_images(self, mutex):

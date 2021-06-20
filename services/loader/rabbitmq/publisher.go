@@ -27,7 +27,7 @@ func SendNFTToRabbit(nft models.NFT) {
 	}
 
 	queue, err := amqpChannel.QueueDeclare(
-		config.QueueIndexing,
+		config.RabbitQueueIndexing,
 		true,
 		false,
 		false,
@@ -36,7 +36,7 @@ func SendNFTToRabbit(nft models.NFT) {
 	)
 
 	if err != nil {
-		fmt.Println(fmt.Sprintf("error during declare `QueueIndexing` queue: %s", err))
+		fmt.Println(fmt.Sprintf("error during declare `RabbitQueueIndexing` queue: %s", err))
 		return
 	}
 
