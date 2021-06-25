@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -15,7 +14,6 @@ import (
 	"github.com/vladimir3322/stonent_go/tools/models"
 	"github.com/vladimir3322/stonent_go/tools/utils"
 	"sync"
-	"time"
 )
 
 func main() {
