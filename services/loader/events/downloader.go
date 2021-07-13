@@ -2,7 +2,6 @@ package events
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/vladimir3322/stonent_go/ipfs"
@@ -10,6 +9,8 @@ import (
 	"github.com/vladimir3322/stonent_go/rabbitmq"
 	"github.com/vladimir3322/stonent_go/tools/models"
 	"net/url"
+	"regexp"
+	"strings"
 	"sync"
 )
 
@@ -20,14 +21,16 @@ func getImageSource(ipfsPath string) (string, error) {
 		return "", errors.New(fmt.Sprintf("error with %s: %s", ipfsPath, err))
 	}
 
-	var jsonBody iImageMetadata
-	imageMetadataParserErr := json.Unmarshal(imageMetadataRes, &jsonBody)
+	re := regexp.MustCompile(`"ipfs://ipfs/.*?"`)
+	imageUrl := re.Find(imageMetadataRes)
 
-	if imageMetadataParserErr != nil {
-		return "", errors.New(fmt.Sprintf("error with %s: %s", ipfsPath, imageMetadataParserErr))
+	if len(imageUrl) == 0 {
+		return "", errors.New(fmt.Sprintf("error with %s: image source url not found", ipfsPath))
 	}
 
-	parsedImageUrl, err := url.Parse(jsonBody.Image)
+	stringImageUrl := string(imageUrl)
+	fixedStringImageUrl := strings.Replace(stringImageUrl, "\"", "", -1)
+	parsedImageUrl, err := url.Parse(fixedStringImageUrl)
 
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("error with %s: %s", ipfsPath, err))
@@ -66,10 +69,10 @@ func downloadImage(address string, nftId string, ipfsPath string) bool {
 	}
 
 	rabbitmq.SendNFTToRabbit(models.NFT{
-		NFTID: nftId,
+		NFTID:           nftId,
 		ContractAddress: address,
-		Data: imageSource,
-		IsFinite: false,
+		Data:            imageSource,
+		IsFinite:        false,
 	})
 
 	return true
