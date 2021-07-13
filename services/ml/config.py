@@ -14,3 +14,11 @@ postgres_user = 'guest'
 postgres_password = 'guest'
 postgres_host = 'localhost'
 postgres_port = 5432
+
+nn_page_size = 500_000
+nn_index_dir = 'nn_indexes'
+nn_index_file_prefix = f'./{nn_index_dir}/indexes-'
+nn_index_file_postfix = '.hnsw'
+nn_features_dict_dir = 'nn_features_dicts'
+nn_features_dict_file_prefix = f'./{nn_features_dict_dir}/features-dict-'
+nn_features_dict_file_postfix = '.json'

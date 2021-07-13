@@ -6,7 +6,6 @@ import socketserver
 import json
 import loader
 import numpy
-import base64
 import cv2
 import config
 import globals
@@ -108,7 +107,7 @@ def get_adapter_result(job_id, contract_address, nft_id):
             if not image_source or image_source_error:
                 return get_result(500, None, image_source_error)
 
-            np_image_source = numpy.frombuffer(base64.b64decode(image_source), numpy.uint8)
+            np_image_source = numpy.frombuffer(image_source, numpy.uint8)
             image = cv2.imdecode(np_image_source, cv2.IMREAD_COLOR)
             image = Image.fromarray(image)
 
@@ -159,7 +158,7 @@ def register_new_image(contract_address, nft_id):
             if not image_source or image_source_error:
                 return 500, {'error': image_source_error or 'Image source is empty'}
 
-            globals.image_manager.register_new_image(contract_address, nft_id, base64.b64decode(image_source))
+            globals.image_manager.register_new_image(contract_address, nft_id, image_source)
 
             return 200, {'error': None}
         except Exception as e:

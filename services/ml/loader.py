@@ -1,4 +1,5 @@
 import requests
+import base64
 import config
 
 
@@ -10,7 +11,7 @@ def get_image_source(address, image_id):
 
         return None, f'Invalid response code from loader server {res.status_code} with error: {res.text}'
 
-    return res.text, None
+    return base64.b64decode(res.text or ''), None
 
 
 def get_statistics():

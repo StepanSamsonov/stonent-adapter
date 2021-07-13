@@ -1,3 +1,5 @@
 /.idea
 
 /services/ml/__pycache__
+/services/ml/nn_features_dicts
+/services/ml/nn_indexes
