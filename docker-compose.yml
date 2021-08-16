@@ -20,7 +20,19 @@ services:
   postgres:
       image: stonent/adapter-postgres
       restart: always
+  chainlink:
+    image: stonent/adapter-chainlink
+    command: local node -p /chainlink/.password -a /chainlink/.api
+    restart: on-failure
+    ports:
+      - 6688:6688
+    depends_on:
+      - postgres
+    volumes:
+      - chainlink:/chainlink
 
 volumes:
+  postgres:
+  chainlink:
   rabbitmq:
     driver: local
