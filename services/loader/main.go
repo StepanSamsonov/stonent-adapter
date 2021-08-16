@@ -10,6 +10,7 @@ import (
 	"github.com/vladimir3322/stonent_go/postgres"
 	"github.com/vladimir3322/stonent_go/rabbitmq"
 	"github.com/vladimir3322/stonent_go/server"
+	"github.com/vladimir3322/stonent_go/stonent"
 	"github.com/vladimir3322/stonent_go/tools/erc1155"
 	"github.com/vladimir3322/stonent_go/tools/models"
 	"github.com/vladimir3322/stonent_go/tools/utils"
@@ -22,28 +23,33 @@ func main() {
 	ipfs.Init()
 	postgres.Init()
 
-	var contractsAddresses = []string{"0xd07dc4262bcdbf85190c01c996b4c06a461d2430"}
-	var completedContracts = 0
-
 	ethConnection := eth.GetEthClient()
+	collections, collectionsErr := stonent.GetIndexedCollections(ethConnection)
+	completedCollections := 0
 
-	// Все картины
+	if collectionsErr != nil {
+		panic(collectionsErr)
+	}
+
+	fmt.Println(fmt.Sprintf("Indexed collections set: %s", collections))
+
+	//Все картины
 	//startBlockNumber := 0
 	//latestBlockNumber := eth.GetLatestBlockNumber(ethConnection)
 
-	// Много картин
+	//Много картин
 	//startBlockNumber := uint64(12291943)
 	//latestBlockNumber := eth.GetLatestBlockNumber(ethConnection)
 
-	// 4 картины
-    startBlockNumber := uint64(12291940)
-    latestBlockNumber := uint64(12291943)
+	//4 картины
+	startBlockNumber := uint64(12291940)
+	latestBlockNumber := uint64(12291943)
 
-	for _, contractAddress := range contractsAddresses {
-		go getEvents(ethConnection, contractAddress, startBlockNumber, latestBlockNumber, func() {
-			completedContracts += 1
+	for _, collection := range collections {
+		go getEvents(ethConnection, collection, startBlockNumber, latestBlockNumber, func() {
+			completedCollections += 1
 
-			if len(contractsAddresses) == completedContracts {
+			if len(collections) == completedCollections {
 				fmt.Println("loader completed successfully")
 
 				rabbitmq.SendNFTToRabbit(models.NFT{
@@ -52,8 +58,29 @@ func main() {
 			}
 		})
 
-		go events.ListenEvents(contractAddress, latestBlockNumber)
+		go events.ListenEvents(collection, latestBlockNumber)
 	}
+
+	go stonent.ListenIndexedCollections(ethConnection, func(collection string, isActive bool) {
+		if isActive {
+			if !utils.Contains(collections, collection) {
+				collections = append(collections, collection)
+
+				go getEvents(ethConnection, collection, startBlockNumber, latestBlockNumber, func() {
+					rabbitmq.SendNFTToRabbit(models.NFT{
+						IsFinite: true,
+					})
+				})
+				go events.ListenEvents(collection, latestBlockNumber)
+			}
+		} else {
+			if utils.Contains(collections, collection) {
+				collections = utils.RemoveByItem(collections, collection)
+			}
+		}
+
+		fmt.Println(fmt.Sprintf("Indexed collections set has been changed %s", collections))
+	})
 
 	utils.WaitSignals()
 }

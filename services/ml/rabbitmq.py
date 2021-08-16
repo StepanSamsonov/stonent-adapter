@@ -71,5 +71,6 @@ def consume_events():
             continue
 
         print('Received from Rabbit:', contract_address, nft_id, flush=True)
+        globals.all_images_has_been_downloaded = False
 
         yield contract_address, nft_id, image_bytes_source
