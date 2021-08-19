@@ -1,17 +1,31 @@
 version: '3'
 
 services:
+  loader:
+    image: stonent/adapter-loader
+    env_file:
+      - ./loader.env
+    depends_on:
+      - rabbitmq
+      - postgres
+      - ml
+  chainlink:
+    image: stonent/adapter-chainlink
+    command: local node -p /chainlink/.password -a /chainlink/.api
+    restart: on-failure
+    env_file:
+      - ./chainlink.env
+    ports:
+      - 6688:6688
+    depends_on:
+      - postgres
+    volumes:
+      - chainlink:/chainlink
   ml:
     image: stonent/adapter-ml
     depends_on:
       - rabbitmq
       - postgres
-  loader:
-    image: stonent/adapter-loader
-    depends_on:
-      - rabbitmq
-      - postgres
-      - ml
   rabbitmq:
     image: stonent/adapter-rabbitmq
     restart: always
@@ -20,16 +34,6 @@ services:
   postgres:
       image: stonent/adapter-postgres
       restart: always
-  chainlink:
-    image: stonent/adapter-chainlink
-    command: local node -p /chainlink/.password -a /chainlink/.api
-    restart: on-failure
-    ports:
-      - 6688:6688
-    depends_on:
-      - postgres
-    volumes:
-      - chainlink:/chainlink
 
 volumes:
   postgres:

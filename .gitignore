@@ -1,6 +1,7 @@
 /.idea
 
-/services/loader/.env
+/loader.env
+/chainlink.env
 
 /services/ml/__pycache__
 /services/ml/nn_features_dicts
