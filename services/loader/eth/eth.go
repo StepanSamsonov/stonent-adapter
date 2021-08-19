@@ -2,18 +2,17 @@ package eth
 
 import (
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/vladimir3322/stonent_go/config"
 	"github.com/vladimir3322/stonent_go/tools/api"
 	"github.com/vladimir3322/stonent_go/tools/models"
 	"time"
 )
 
-func GetEthClient() *ethclient.Client {
-	ethClient, err := ethclient.Dial(config.ProviderUrl)
+func GetEthClient(url string) *ethclient.Client {
+	ethClient, err := ethclient.Dial(url)
 
 	if err != nil {
 		time.Sleep(time.Millisecond * 100)
-		return GetEthClient()
+		return GetEthClient(url)
 	}
 
 	return ethClient

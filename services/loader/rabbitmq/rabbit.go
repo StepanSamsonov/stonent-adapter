@@ -11,7 +11,7 @@ var rabbitConn *amqp.Connection
 
 func Init() *amqp.Connection {
 	var err error
-	rabbitAddr := fmt.Sprintf("amqp://%s:%s@%s:%s/", config.RabbitLogin, config.RabbitPass, config.RabbitHost, config.RabbitPort)
+	rabbitAddr := fmt.Sprintf("amqp://%s:%s@%s:%s/", config.RabbitLogin, config.RabbitPassword, config.RabbitHost, config.RabbitPort)
 	rabbitConn, err = amqp.Dial(rabbitAddr)
 
 	if err != nil {

@@ -19,7 +19,7 @@ var CountOfDownloaded = 0
 var mutex = sync.Mutex{}
 
 func IsExceededImagesLimitCount() bool {
-	return config.DownloadImageMaxCount != -1 && CountOfDownloaded >= config.DownloadImageMaxCount
+	return config.DownloadImagesMaxCount != -1 && CountOfDownloaded >= config.DownloadImagesMaxCount
 }
 
 func pushToBuffer(item BufferItem) {
@@ -28,7 +28,7 @@ func pushToBuffer(item BufferItem) {
 
 	CountOfFound += 1
 
-	for bufferSize >= config.DownloadImageBufferSize {
+	for bufferSize >= config.DownloadImagesBufferSize {
 
 	}
 

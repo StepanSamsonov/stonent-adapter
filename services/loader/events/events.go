@@ -13,10 +13,6 @@ import (
 	"sync"
 )
 
-type iImageMetadata struct {
-	Image string
-}
-
 func GetById(contract *erc1155.Erc1155, id *big.Int) (string, error) {
 	opt := &bind.FilterOpts{}
 	s := []*big.Int{id}
@@ -133,10 +129,8 @@ func listenByWatcher(ethClient *ethclient.Client, address string, startBlock uin
 	}
 }
 
-func ListenEvents(address string, startBlock uint64) {
+func ListenEvents(ethClient *ethclient.Client, address string, startBlock uint64) {
 	for {
-		ethClient := eth.GetEthClient()
-
 		listenByWatcher(ethClient, address, startBlock)
 
 		startBlock = eth.GetLatestBlockNumber(ethClient)

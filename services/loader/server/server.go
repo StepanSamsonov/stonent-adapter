@@ -55,7 +55,7 @@ func getImageSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, ethErr := ethclient.Dial(config.ProviderUrl)
+	conn, ethErr := ethclient.Dial(config.CollectionsProviderUrl)
 
 	if ethErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -105,13 +105,13 @@ func getImageSource(w http.ResponseWriter, r *http.Request) {
 
 func getStatistics(w http.ResponseWriter, _ *http.Request) {
 	type IResponse struct {
-		CountOfFound int
+		CountOfFound      int
 		CountOfDownloaded int
-		CountOfRejected int
+		CountOfRejected   int
 	}
 
 	var response = IResponse{
-		CountOfFound: events.CountOfFound,
+		CountOfFound:      events.CountOfFound,
 		CountOfDownloaded: events.CountOfDownloaded,
 	}
 
@@ -129,7 +129,7 @@ func Run() {
 	http.HandleFunc("/image_source", getImageSource)
 	http.HandleFunc("/statistics", getStatistics)
 
-	err := http.ListenAndServe(":" + strconv.Itoa(config.ServerPort), nil)
+	err := http.ListenAndServe(":"+strconv.Itoa(config.ServerPort), nil)
 
 	if err != nil {
 		log.Fatal("server starting:", err)
