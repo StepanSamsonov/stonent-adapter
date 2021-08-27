@@ -1,14 +1,14 @@
 version: '3'
 
 services:
-  loader:
-    image: stonent/adapter-loader
-    env_file:
-      - ./loader.env
-    depends_on:
-      - rabbitmq
-      - postgres
-      - ml
+#  loader:
+#    image: stonent/adapter-loader
+#    env_file:
+#      - ./loader.env
+#    depends_on:
+#      - rabbitmq
+#      - postgres
+#      - ml
   chainlink:
     image: stonent/adapter-chainlink
     command: local node -p /chainlink/.password -a /chainlink/.api
@@ -20,23 +20,23 @@ services:
     depends_on:
       - postgres
     volumes:
-      - chainlink:/chainlink
-  ml:
-    image: stonent/adapter-ml
-    depends_on:
-      - rabbitmq
-      - postgres
-  rabbitmq:
-    image: stonent/adapter-rabbitmq
-    restart: always
-    volumes:
-      - rabbitmq:/var/lib/rabbitmq
+      - chainlink_data:/chainlink
+#  ml:
+#    image: stonent/adapter-ml
+#    depends_on:
+#      - rabbitmq
+#      - postgres
+#  rabbitmq:
+#    image: stonent/adapter-rabbitmq
+#    restart: always
+#    volumes:
+#      - rabbitmq:/var/lib/rabbitmq
   postgres:
       image: stonent/adapter-postgres
       restart: always
 
 volumes:
   postgres:
-  chainlink:
-  rabbitmq:
-    driver: local
+  chainlink_data:
+#  rabbitmq:
+#    driver: local
