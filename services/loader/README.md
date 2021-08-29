@@ -29,5 +29,5 @@ It is used only by ML-service and not available outside.
 It has three endpoints:
 
 1. Downloading image source by contract address and nft-id;
-2. Providing detailed information about failed images downloading (can be received from [ML-service](../ml/swagger.yml));
-3. Providing some statistics stuff (can be received from [ML-service](../ml/swagger.yml)).
+2. Providing detailed information about failed images downloading (can be received from [ML-service](../ml/server.yml));
+3. Providing some statistics stuff (can be received from [ML-service](../ml/server.yml)).

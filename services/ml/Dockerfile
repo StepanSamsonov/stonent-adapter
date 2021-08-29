@@ -1,5 +1,7 @@
 FROM python:3.7
 
+EXPOSE 9191
+
 RUN apt-get update
 RUN apt-get install -y \
         libswscale-dev \

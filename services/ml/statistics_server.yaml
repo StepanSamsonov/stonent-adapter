@@ -1,0 +1,115 @@
+openapi: 3.0.0
+info:
+  title: Stonent ML statistics server
+  version: '1.0'
+servers:
+  - url: 'http://localhost:9191'
+  - url: ''
+
+paths:
+  '/statistics':
+    get:
+      summary: Get statistics about images indexing process
+      responses:
+        '200':
+          description: Retrieve the statistics information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetStatisticsResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetStatisticsResponse'
+
+components:
+  parameters:
+    contract_address:
+      in: query
+      name: contract_address
+      required: true
+      schema:
+        type: string
+      example: '0xd07dc4262bcdbf85190c01c996b4c06a461d2430'
+    nft_id:
+      in: query
+      name: nft_id
+      required: true
+      schema:
+        type: string
+      example: '507779'
+
+  requestBodies:
+    CheckRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+              data:
+                type: object
+                properties:
+                  contract_address:
+                    type: string
+                  nft_id:
+                    type: string
+                required:
+                  - contract_address
+                  - nft_id
+            required:
+              - id
+              - data
+
+    RegisterRejectedImageByIPFSRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              contract_address:
+                type: string
+              nft_id:
+                type: string
+              description:
+                type: string
+
+  schemas:
+    GetStatisticsResponse:
+      type: object
+      properties:
+        statistics:
+          type: object
+          properties:
+            found_images_count:
+              description: Images found in contracts by Loader service
+              type: number
+            precessed_images_count:
+              description: Downloaded images which have been sent to Rabbit
+              type: number
+            registered_images_count:
+              description: Images which have been successfully indexed by NN
+              type: number
+            rejected_by_ipfs_images_count:
+              description: Images which have not been downloaded by Loader
+              type: number
+            rejected_by_nn_images_count:
+              description: Images which have not been indexed by NN
+              type: number
+            is_completed:
+              description: All images have been indexed and NN is ready for scoring
+              type: boolean
+          required:
+            - found_images_count
+            - precessed_images_count
+            - registered_images_count
+            - rejected_by_ipfs_images_count
+            - rejected_by_nn_images_count
+            - is_completed
+        error:
+          type: string

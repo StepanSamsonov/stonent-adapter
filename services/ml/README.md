@@ -9,7 +9,7 @@ This service is two-threading program completing the next tasks:
 
 2. Simple HTTP-server
 
-    Provides interface to interact with NN and receive statistics data, see [Swagger](./swagger.yml) for more details.
+    Provides interface to interact with NN and receive statistics data, see [Swagger](server.yml) for more details.
 
 After launch, service wait RabbitMQ connection.
 Then service starts to consume images, indexes NN and processes HTTP-server.

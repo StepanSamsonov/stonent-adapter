@@ -1,4 +1,5 @@
 server_port = 9090
+statistics_server_port = 9191
 
 loader_url = 'http://localhost:8080'
 

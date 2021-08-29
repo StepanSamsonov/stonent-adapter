@@ -46,8 +46,6 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
             status_code, response_body = get_rejected_images_by_nn()
         elif parsed_url.path == '/rejected_images_by_ipfs':
             status_code, response_body = get_rejected_images_by_ipfs()
-        elif parsed_url.path == '/statistics':
-            status_code, response_body = get_statistics()
 
         response = json.dumps(response_body)
         response = bytes(response, 'utf8')
@@ -218,40 +216,6 @@ def get_rejected_images_by_nn():
             rejected_images_by_nn = list(rejected_images_by_nn)
 
             return 200, {'rejected_images_by_nn': rejected_images_by_nn}
-        except Exception as e:
-            return 500, {'error': e}
-
-
-def get_statistics():
-    with globals.mutex:
-        try:
-            registered_images = RegisteredImages.filter()
-            registered_images_count = registered_images.total
-
-            rejected_by_ipfs_images = RejectedImagesByIPFS.filter()
-            rejected_by_ipfs_images_count = rejected_by_ipfs_images.total
-
-            rejected_by_nn_images = RejectedImagesByNN.filter()
-            rejected_by_nn_images_count = rejected_by_nn_images.total
-
-            loader_response, loader_error = loader.get_statistics()
-
-            if not loader_response or loader_error:
-                raise loader_error
-            else:
-                found_images_count = loader_response.get('CountOfFound')
-                precessed_images_count = loader_response.get('CountOfDownloaded')
-
-            return 200, {
-                'statistics': {
-                    'found_images_count': found_images_count,
-                    'precessed_images_count': precessed_images_count,
-                    'registered_images_count': registered_images_count,
-                    'rejected_by_ipfs_images_count': rejected_by_ipfs_images_count,
-                    'rejected_by_nn_images_count': rejected_by_nn_images_count,
-                    'is_completed': globals.all_images_has_been_downloaded,
-                }
-            }
         except Exception as e:
             return 500, {'error': e}
 

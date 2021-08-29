@@ -3,6 +3,7 @@ from globals import image_manager, mutex
 from PIL import Image
 import time
 import server
+import statistics_server
 import postgres
 
 
@@ -18,9 +19,12 @@ if __name__ == '__main__':
     registerer_thread.daemon = True
     server_thread = Thread(target=server.run_server)
     server_thread.daemon = True
+    statistics_server_thread = Thread(target=statistics_server.run_statistics_server)
+    statistics_server_thread.daemon = True
 
     registerer_thread.start()
     server_thread.start()
+    statistics_server_thread.start()
 
     while True:
         time.sleep(1)

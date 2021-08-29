@@ -2,6 +2,8 @@
 
 /loader.env
 /chainlink.env
+/.api
+/.password
 
 /services/ml/__pycache__
 /services/ml/nn_features_dicts

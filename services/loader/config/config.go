@@ -69,10 +69,10 @@ func InitConfig() error {
 	unparsedDownloadImagesMaxCount := os.Getenv("DOWNLOAD_IMAGES_MAX_COUNT")
 
 	if len(unparsedDownloadImagesMaxCount) != 0 {
-		parsedDownloadImagesMaxCount, parseDownloadImagesMaxCount := strconv.Atoi(unparsedDownloadImagesMaxCount)
+		parsedDownloadImagesMaxCount, parseDownloadImagesMaxCountErr := strconv.Atoi(unparsedDownloadImagesMaxCount)
 
-		if parseDownloadImagesMaxCount != nil {
-			return parseDownloadImagesMaxCount
+		if parseDownloadImagesMaxCountErr != nil {
+			DownloadImagesMaxCount = -1
 		}
 
 		DownloadImagesMaxCount = parsedDownloadImagesMaxCount

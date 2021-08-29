@@ -1,0 +1,305 @@
+openapi: 3.0.0
+info:
+  title: Stonent ML
+  version: '1.0'
+servers:
+  - url: 'http://localhost:9090'
+  - url: 'http://ec2-3-15-13-71.us-east-2.compute.amazonaws.com'
+
+paths:
+  '/check':
+    post:
+      summary: Call adapter result
+      requestBody:
+        $ref: '#/components/requestBodies/CheckRequestBody'
+      responses:
+        '200':
+          description: Retrieve adapter result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetAdapterResponse'
+
+  '/register_new_image':
+    get:
+      summary: Separate request to index a single image by NN
+      parameters:
+        - $ref: '#/components/parameters/contract_address'
+        - $ref: '#/components/parameters/nft_id'
+      responses:
+        '200':
+          description: Successfully indexed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterNewImageResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterNewImageResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterNewImageResponse'
+
+  '/check_registered_image':
+    get:
+      summary: Check if an image has been indexed by NN
+      parameters:
+        - $ref: '#/components/parameters/contract_address'
+        - $ref: '#/components/parameters/nft_id'
+      responses:
+        '200':
+          description: Retrieve an answer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckRegisteredImageResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckRegisteredImageResponse'
+
+  '/registered_images':
+    get:
+      summary: Get images which have been indexed by NN
+      responses:
+        '200':
+          description: Retrieve an array of registered images
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRegisteredImagesResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRegisteredImagesResponse'
+
+  '/rejected_images_by_nn':
+    get:
+      summary: Get images which have been failed by NN indexing
+      responses:
+        '200':
+          description: Retrieve an array of rejected images
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRejectedImagesByNNResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRejectedImagesByNNResponse'
+
+  '/rejected_images_by_ipfs':
+    get:
+      summary: Get images which have been failed by downloading from IPFS
+      responses:
+        '200':
+          description: Retrieve an array of rejected images
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRejectedImagesByIPFSResponse'
+        '500':
+          description: Internal error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetRejectedImagesByIPFSResponse'
+
+components:
+  parameters:
+    contract_address:
+      in: query
+      name: contract_address
+      required: true
+      schema:
+        type: string
+      example: '0xd07dc4262bcdbf85190c01c996b4c06a461d2430'
+    nft_id:
+      in: query
+      name: nft_id
+      required: true
+      schema:
+        type: string
+      example: '507779'
+
+  requestBodies:
+    CheckRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+              data:
+                type: object
+                properties:
+                  contract_address:
+                    type: string
+                  nft_id:
+                    type: string
+                required:
+                  - contract_address
+                  - nft_id
+            required:
+              - id
+              - data
+
+    RegisterRejectedImageByIPFSRequestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              contract_address:
+                type: string
+              nft_id:
+                type: string
+              description:
+                type: string
+
+  schemas:
+    GetAdapterResponse:
+      type: object
+      properties:
+        job_run_iD:
+          description: Has format {contract_address}_{nft_id}
+          type: string
+        data:
+          description: Includes NN score info, field is null if there is an error
+          type: object
+          properties:
+            score:
+              description: Number from 0 to 100, final image score
+              type: number
+            detailed_information:
+              description: Info about the most similar pictures found by NN
+              type: object
+              properties:
+                scores:
+                  description: Is array of floats from 0 to 1
+                  type: array
+                  items:
+                    type: number
+                    format: float
+                descriptions:
+                  description: Is array of corresponding pictures identifiers with format {contract_address}_{nft_id}
+                  type: array
+                  items:
+                    type: string
+              required:
+                - scores
+                - descriptions
+          required:
+            - score
+            - detailed_information
+          nullable: true
+        error:
+          description: Is null if everything ok
+          type: string
+          nullable: true
+        statusCode:
+          description: http-like response status code
+          type: number
+      required:
+        - jobRunID
+        - data
+        - error
+        - statusCode
+
+    RegisterNewImageResponse:
+      type: object
+      properties:
+        error:
+          description: Is null if everything ok
+          type: string
+          nullable: true
+      required:
+        - error
+
+    CheckRegisteredImageResponse:
+      type: object
+      properties:
+        is_registered:
+          type: boolean
+        error:
+          type: string
+
+    GetRegisteredImagesResponse:
+      type: object
+      properties:
+        registered_images:
+          description: One picture per array item
+          type: array
+          items:
+            type: object
+            properties:
+              contract_address:
+                type: string
+              nft_id:
+                type: string
+              format:
+                type: string
+            required:
+              - contract_add
+              - nft_id
+              - format
+        error:
+          type: string
+
+    GetRejectedImagesByNNResponse:
+      type: object
+      properties:
+        rejected_images_by_nn:
+          description: One picture per array item
+          type: array
+          items:
+            type: object
+            properties:
+              contract_address:
+                type: string
+              nft_id:
+                type: string
+            required:
+              - contract_address
+              - nft_id
+        error:
+          type: string
+
+    GetRejectedImagesByIPFSResponse:
+      type: object
+      properties:
+        rejected_images_by_ipfs:
+          type: array
+          items:
+            type: object
+            properties:
+              contract_address:
+                type: string
+              nft_id:
+                type: string
+              ipfs_path:
+                  type: string
+              description:
+                type: string
+            required:
+              - contract_address
+              - nft_id
+              - ipfs_path
+              - description
+        error:
+          type: string
