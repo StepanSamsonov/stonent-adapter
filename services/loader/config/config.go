@@ -40,7 +40,7 @@ func InitConfig() error {
 		RabbitHost = "localhost"
 		PostgresHost = "localhost"
 	} else {
-		dotenvErr = godotenv.Load()
+		dotenvErr = godotenv.Load("./loader.env")
 		RabbitHost = "rabbitmq"
 		PostgresHost = "postgres"
 	}

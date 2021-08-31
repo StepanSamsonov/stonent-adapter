@@ -9,6 +9,8 @@ services:
       - rabbitmq
       - postgres
       - ml
+    volumes:
+      - ./loader.env:/app/loader.env
   chainlink:
     image: stonent/adapter-chainlink
     command: local node -p /chainlink/.password -a /chainlink/.api
