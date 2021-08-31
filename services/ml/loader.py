@@ -11,7 +11,9 @@ def get_image_source(address, image_id):
 
         return None, f'Invalid response code from loader server {res.status_code} with error: {res.text}'
 
-    return base64.b64decode(res.text or ''), None
+    data = res.json()
+
+    return base64.b64decode(data.get('imageSource') or ''), data.get('blockNumber'), None
 
 
 def get_statistics():

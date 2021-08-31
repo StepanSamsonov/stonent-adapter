@@ -100,19 +100,20 @@ def get_adapter_result(job_id, contract_address, nft_id):
             if not nft_id or not nft_id.isdigit():
                 return get_result(400, None, 'Invalid nft id')
 
-            image_source, image_source_error = loader.get_image_source(contract_address, nft_id)
+            image_source, block_number, image_source_error = loader.get_image_source(contract_address, nft_id)
 
-            if not image_source or image_source_error:
+            if not image_source or not block_number or image_source_error:
                 return get_result(500, None, image_source_error)
 
             np_image_source = numpy.frombuffer(image_source, numpy.uint8)
             image = cv2.imdecode(np_image_source, cv2.IMREAD_COLOR)
             image = Image.fromarray(image)
 
-            scores, descriptions = globals.image_checker.find_most_similar_images(image)
+            scores, descriptions = globals.image_checker.find_most_similar_images(image, block_number)
 
             if not len(scores) or not len(descriptions):
-                return get_result(500, None, f'Invalid NN response: scores={scores}; description={descriptions}')
+                scores = [1]
+                descriptions = ['']
 
             if descriptions[0] == f'{contract_address}-{nft_id}':
                 score = scores[1]
@@ -151,12 +152,12 @@ def register_new_image(contract_address, nft_id):
             if already_registered:
                 return 400, {'error': 'Already registered'}
 
-            image_source, image_source_error = loader.get_image_source(contract_address, nft_id)
+            image_source, block_number, image_source_error = loader.get_image_source(contract_address, nft_id)
 
             if not image_source or image_source_error:
                 return 500, {'error': image_source_error or 'Image source is empty'}
 
-            globals.image_manager.register_new_image(contract_address, nft_id, image_source)
+            globals.image_manager.register_new_image(contract_address, nft_id, block_number, image_source)
 
             return 200, {'error': None}
         except Exception as e:

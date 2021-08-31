@@ -62,6 +62,7 @@ def consume_events():
 
         contract_address = data['contractAddress']
         nft_id = data['nftID']
+        block_number = data['blockNumber']
         image_bytes_source = base64.b64decode(data['data'])
         is_finite = data['isFinite']
 
@@ -70,7 +71,7 @@ def consume_events():
             print('Actual images have been downloaded', flush=True)
             continue
 
-        print('Received from Rabbit:', contract_address, nft_id, flush=True)
+        print('Received from Rabbit:', contract_address, nft_id, block_number, flush=True)
         globals.all_images_has_been_downloaded = False
 
-        yield contract_address, nft_id, image_bytes_source
+        yield contract_address, nft_id, block_number, image_bytes_source

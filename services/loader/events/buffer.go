@@ -6,10 +6,11 @@ import (
 )
 
 type BufferItem struct {
-	address  string
-	nftId    string
-	ipfsPath string
-	waiter   *sync.WaitGroup
+	address     string
+	nftId       string
+	ipfsPath    string
+	blockNumber uint64
+	waiter      *sync.WaitGroup
 }
 
 var Buffer = make(chan BufferItem)
@@ -50,7 +51,7 @@ func RunBuffer() {
 				return
 			}
 
-			go downloadImageWithWaiter(item.address, item.nftId, item.ipfsPath, item.waiter, func(isSucceed bool) {
+			go downloadImageWithWaiter(item.address, item.nftId, item.ipfsPath, item.blockNumber, item.waiter, func(isSucceed bool) {
 				bufferSize -= 1
 			})
 		}

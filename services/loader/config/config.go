@@ -7,30 +7,43 @@ import (
 	"strconv"
 )
 
+const Mode = "DEV"
 const ServerPort = 8080
 
 var StonentContractAddress = ""
 var CommonProviderUrl = ""
 var CollectionsProviderUrl = ""
 
+var RabbitHost = ""
+
 const RabbitLogin = "guest"
 const RabbitPassword = "guest"
-const RabbitHost = "localhost"
 const RabbitPort = "5672"
 const RabbitQueueIndexing = "indexing"
+
+var PostgresHost = ""
 
 const PostgresDbName = "postgres"
 const PostgresSchema = "schema"
 const PostgresLogin = "guest"
 const PostgresPassword = "guest"
-const PostgresHost = "localhost"
 const PostgresPort = "5432"
 
 var DownloadImagesBufferSize = 10
 var DownloadImagesMaxCount = -1 // -1 for ignoring
 
 func InitConfig() error {
-	dotenvErr := godotenv.Load()
+	var dotenvErr error
+
+	if Mode == "DEV" {
+		dotenvErr = godotenv.Load("../../loader.env")
+		RabbitHost = "localhost"
+		PostgresHost = "localhost"
+	} else {
+		dotenvErr = godotenv.Load()
+		RabbitHost = "rabbitmq"
+		PostgresHost = "postgres"
+	}
 
 	if dotenvErr != nil {
 		return dotenvErr

@@ -8,7 +8,7 @@ class ImageManager:
     def __init__(self, image_checker):
         self.image_checker = image_checker
 
-    def register_new_image(self, contract_address, nft_id, bytes_source):
+    def register_new_image(self, contract_address, nft_id, block_number, bytes_source):
         try:
             if not bytes_source:
                 return
@@ -26,7 +26,7 @@ class ImageManager:
             pil_image = Image.open(BytesIO(bytes_source))
             description = f'{str(contract_address)}-{str(nft_id)}'
 
-            self.image_checker.add_image_to_storage(pil_image, description)
+            self.image_checker.add_image_to_storage(pil_image, description, block_number)
 
             RegisteredImages.add({
                 'contract_address': contract_address,
@@ -43,6 +43,6 @@ class ImageManager:
             print("Error in registering new image", e, flush=True)
 
     def register_new_images(self, mutex):
-        for contract_address, nft_id, bytes_source in rabbitmq.consume_events():
+        for contract_address, nft_id, block_number, bytes_source in rabbitmq.consume_events():
             with mutex:
-                self.register_new_image(contract_address, nft_id, bytes_source)
+                self.register_new_image(contract_address, nft_id, block_number, bytes_source)

@@ -32,32 +32,44 @@ class NNImageChecker:
                           transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
                         ])
 
-        self._index = nmslib.init(method='hnsw', space='cosinesimil')
-        self._feature_dict = {}
-        self._pages_counter = 1
-        self._page_size_counter = 0
-        self._page_saving_file = self._get_saving_indexes_filename(self._pages_counter)
-
-        if not os.path.exists(config.nn_features_dict_dir):
-            os.mkdir(config.nn_features_dict_dir)
+        if not os.path.exists(config.nn_descriptions_dir):
+            os.mkdir(config.nn_descriptions_dir)
         if not os.path.exists(config.nn_index_dir):
             os.mkdir(config.nn_index_dir)
+        if not os.path.isfile(f'{config.nn_existed_blocks_dir}{config.nn_existed_blocks_file}'):
+            open(NNImageChecker._get_existed_blocks_file(), 'w').close()
 
     @staticmethod
-    def _get_saving_indexes_filename(page_number):
-        return f'{config.nn_index_file_prefix}{page_number}{config.nn_index_file_postfix}'
+    def _get_indexes_filename(block_number):
+        return f'{config.nn_index_file_prefix}{block_number}{config.nn_index_file_postfix}'
 
     @staticmethod
-    def _get_saving_features_filename(page_number):
-        return f'{config.nn_features_dict_file_prefix}{page_number}{config.nn_features_dict_file_postfix}'
+    def _get_descriptions_filename(block_number):
+        return f'{config.nn_descriptions_file_prefix}{block_number}{config.nn_descriptions_file_postfix}'
 
-    def _save_features_dict(self):
-        with open(f'{self._get_saving_features_filename(self._pages_counter)}', 'w') as f:
-            json.dump(self._feature_dict, f)
+    @staticmethod
+    def _save_descriptions(descriptions, block_number):
+        with open(f'{NNImageChecker._get_descriptions_filename(block_number)}', 'w') as f:
+            json.dump(descriptions, f)
 
-    def _load_features_dict(self, page_number):
-        with open(f'{self._get_saving_features_filename(page_number)}') as f:
+    @staticmethod
+    def _load_descriptions(block_number):
+        with open(f'{NNImageChecker._get_descriptions_filename(block_number)}') as f:
             return json.load(f)
+
+    @staticmethod
+    def _get_existed_blocks_file():
+        return f'{config.nn_existed_blocks_dir}{config.nn_existed_blocks_file}'
+
+    @staticmethod
+    def _get_existed_blocks():
+        with open(NNImageChecker._get_existed_blocks_file()) as f:
+            return map(lambda x: int(x), f.read().rstrip().split('\n'))
+
+    @staticmethod
+    def _add_existed_block(block_number):
+        with open(NNImageChecker._get_existed_blocks_file(), 'a') as f:
+            f.write(f'{block_number}\n')
 
     def _get_image_features(self, pil_image):
         """
@@ -114,35 +126,41 @@ class NNImageChecker:
         """
         return np.dot(input1, input2.T) / np.sqrt(np.dot(input1, input1.T) * np.dot(input2, input2.T))
 
-    def add_image_to_storage(self, pil_image, description):
+    def add_image_to_storage(self, pil_image, description, block_number):
         """
         :param pil_image: image loaded py PIL library.
         :param description: description of the image. Will be returned if image will be chosen as neighbour
+        :param block_number: Ethereum block number
         :return: None
         """
+        descriptions_filename = self._get_descriptions_filename(block_number)
+        descriptions = dict()
+
+        if os.path.isfile(descriptions_filename):
+            descriptions = self._load_descriptions(block_number)
+        else:
+            self._add_existed_block(block_number)
+
+        descriptions_count = len(descriptions)
         features = self._get_features(pil_image)
-        index = len(self._feature_dict)
+        index = nmslib.init(method='hnsw', space='cosinesimil')
+        indexes_filename = self._get_indexes_filename(block_number)
 
-        self._feature_dict[index] = description
-        self._index.addDataPoint(data=features, id=index)
+        if os.path.isfile(indexes_filename):
+            index.loadIndex(indexes_filename)
 
-        self._page_size_counter += 1
-        self._index.createIndex({'post': 2})
+        descriptions[descriptions_count] = description
+        index.addDataPoint(data=features, id=descriptions_count)
 
-        saving_filename = self._get_saving_indexes_filename(self._pages_counter)
+        index.createIndex({'post': 2})
 
-        self._index.saveIndex(saving_filename, True)
-        self._save_features_dict()
+        index.saveIndex(indexes_filename, True)
+        self._save_descriptions(descriptions, block_number)
 
-        if self._page_size_counter == config.nn_page_size:
-            self._index = nmslib.init(method='hnsw', space='cosinesimil')
-            self._feature_dict = {}
-            self._page_size_counter = 0
-            self._pages_counter += 1
-
-    def find_most_similar_images(self, pil_image, num=5):
+    def find_most_similar_images(self, pil_image, block_number, num=5):
         """
         :param pil_image:  image loaded py PIL library.
+        :param block_number: Ethereum block number
         :param num: number of neighbours to return
         :return: scores, nearest_descriptions.
                  scores - Scores of simularity between pil_image and neighbours
@@ -151,27 +169,31 @@ class NNImageChecker:
         features = self._get_features(pil_image)
         candidates_descriptions = []
 
-        for page in range(self._pages_counter + 1):
-            if page == self._pages_counter and self._page_size_counter == 0:
+        for current_block_number in self._get_existed_blocks():
+            if current_block_number >= block_number:
                 continue
 
             index = nmslib.init(method='hnsw', space='cosinesimil')
-            feature_dict = self._load_features_dict(page)
+            descriptions = self._load_descriptions(current_block_number)
 
-            index.loadIndex(self._get_saving_indexes_filename(page))
+            index.loadIndex(self._get_indexes_filename(current_block_number))
 
             indexes, scores = index.knnQuery(features, k=num)
-            nearest_descriptions = [feature_dict[str(i)] for i in indexes]
+            nearest_descriptions = [descriptions[str(i)] for i in indexes]
 
-            candidates_descriptions.extend(nearest_descriptions)
+            if not len(nearest_descriptions):
+                continue
+
+            candidates_descriptions.append(nearest_descriptions[0])
+            print(f'Nearest description for block {current_block_number}: {nearest_descriptions[0]}')
 
         index = nmslib.init(method='hnsw', space='cosinesimil')
-        feature_dict = {}
+        descriptions = {}
 
         for i, description in enumerate(candidates_descriptions):
-            feature_dict[i] = description
+            descriptions[i] = description
             [address, nft_id] = description.split('-')
-            candidate_source, candidate_error = loader.get_image_source(address, nft_id)
+            candidate_source, _, candidate_error = loader.get_image_source(address, nft_id)
 
             if not candidate_source or candidate_error:
                 raise candidate_error
@@ -184,7 +206,7 @@ class NNImageChecker:
         index.createIndex({'post': 2})
 
         indexes, scores = index.knnQuery(features, k=num)
-        nearest_descriptions = [feature_dict[i] for i in indexes]
+        nearest_descriptions = [descriptions[i] for i in indexes]
         scores = self._transform_scores(scores)
 
         return scores, nearest_descriptions

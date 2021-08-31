@@ -14,11 +14,11 @@ paths:
         $ref: '#/components/requestBodies/CheckRequestBody'
       responses:
         '200':
-          description: Retrieve adapter result
+          description: Retrieve an adapter result
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetAdapterResponse'
+                $ref: '#/components/schemas/PostAdapterResponse'
 
   '/register_new_image':
     get:
@@ -173,7 +173,7 @@ components:
                 type: string
 
   schemas:
-    GetAdapterResponse:
+    PostAdapterResponse:
       type: object
       properties:
         job_run_iD:

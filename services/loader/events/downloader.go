@@ -47,10 +47,10 @@ func getImageSource(ipfsPath string) (string, error) {
 	return b64ImageSource, nil
 }
 
-func downloadImageWithWaiter(address string, nftId string, ipfsPath string, waiter *sync.WaitGroup, cb func(isSucceed bool)) {
+func downloadImageWithWaiter(address string, nftId string, ipfsPath string, blockNumber uint64, waiter *sync.WaitGroup, cb func(isSucceed bool)) {
 	defer waiter.Done()
 
-	isSucceed := downloadImage(address, nftId, ipfsPath)
+	isSucceed := downloadImage(address, nftId, ipfsPath, blockNumber)
 
 	if isSucceed {
 		CountOfDownloaded += 1
@@ -59,7 +59,7 @@ func downloadImageWithWaiter(address string, nftId string, ipfsPath string, wait
 	cb(isSucceed)
 }
 
-func downloadImage(address string, nftId string, ipfsPath string) bool {
+func downloadImage(address string, nftId string, ipfsPath string, blockNumber uint64) bool {
 	imageSource, err := getImageSource(ipfsPath)
 
 	if err != nil {
@@ -72,6 +72,7 @@ func downloadImage(address string, nftId string, ipfsPath string) bool {
 		NFTID:           nftId,
 		ContractAddress: address,
 		Data:            imageSource,
+		BlockNumber:     blockNumber,
 		IsFinite:        false,
 	})
 

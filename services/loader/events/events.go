@@ -13,29 +13,39 @@ import (
 	"sync"
 )
 
-func GetById(contract *erc1155.Erc1155, id *big.Int) (string, error) {
+type IGetById struct {
+	ImageSource string `json:"imageSource"`
+	BlockNumber uint64 `json:"blockNumber"`
+}
+
+func GetById(contract *erc1155.Erc1155, id *big.Int) (*IGetById, error) {
 	opt := &bind.FilterOpts{}
 	s := []*big.Int{id}
 	event, err := contract.FilterURI(opt, s)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	isExist := event.Next()
 
 	if !isExist {
-		return "", errors.New("event not found")
+		return nil, errors.New("event not found")
 	}
 
 	ipfsPath := strings.ReplaceAll(event.Event.Value, "/ipfs/", "")
 	imageSource, err := getImageSource(ipfsPath)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return imageSource, nil
+	res := &IGetById{
+		ImageSource: imageSource,
+		BlockNumber: event.Event.Raw.BlockNumber,
+	}
+
+	return res, nil
 }
 
 func GetEvents(address string, contract *erc1155.Erc1155, startBlock uint64, endBlock uint64, waiter *sync.WaitGroup) {
@@ -83,10 +93,11 @@ func GetEvents(address string, contract *erc1155.Erc1155, startBlock uint64, end
 				ipfsPath := strings.ReplaceAll(past.Event.Value, "/ipfs/", "")
 
 				go pushToBuffer(BufferItem{
-					address:  address,
-					nftId:    past.Event.Id.String(),
-					ipfsPath: ipfsPath,
-					waiter:   waiter,
+					address:     address,
+					nftId:       past.Event.Id.String(),
+					ipfsPath:    ipfsPath,
+					blockNumber: past.Event.Raw.BlockNumber,
+					waiter:      waiter,
 				})
 			}
 		}
@@ -124,7 +135,7 @@ func listenByWatcher(ethClient *ethclient.Client, address string, startBlock uin
 
 			ipfsPath := strings.ReplaceAll(Event.Value, "/ipfs/", "")
 
-			go downloadImage(address, Event.Id.String(), ipfsPath)
+			go downloadImage(address, Event.Id.String(), ipfsPath, Event.Raw.BlockNumber)
 		}
 	}
 }

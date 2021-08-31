@@ -52,6 +52,6 @@ func SendNFTToRabbit(nft models.NFT) {
 	}
 
 	if !nft.IsFinite {
-		fmt.Println(fmt.Sprintf("Sent nft to Rabbit: id = %s, addr = %s ", nft.NFTID, nft.ContractAddress))
+		fmt.Println(fmt.Sprintf("Sent nft to Rabbit: id = %s, addr = %s, blockNumber = %d", nft.NFTID, nft.ContractAddress, nft.BlockNumber))
 	}
 }

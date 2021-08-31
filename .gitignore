@@ -6,5 +6,6 @@
 /.password
 
 /services/ml/__pycache__
-/services/ml/nn_features_dicts
+/services/ml/nn_descriptions
 /services/ml/nn_indexes
+/services/ml/nn_blocks.txt

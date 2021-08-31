@@ -95,8 +95,8 @@ func getImageSource(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-
-	_, err := w.Write([]byte(imageSource))
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(imageSource)
 
 	if err != nil {
 		fmt.Println(fmt.Sprintf("error with server response writing: %s", err))

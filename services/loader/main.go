@@ -42,6 +42,11 @@ func main() {
 
 	fmt.Println(fmt.Sprintf("Indexed collections set: %s", collections))
 
+	// 4 pictures
+	//startBlockNumber := uint64(12291940)
+	//latestBlockNumber := uint64(12291943)
+
+	// All pictures
 	startBlockNumber := uint64(0)
 	latestBlockNumber := eth.GetLatestBlockNumber(collectionsEthConnection)
 
