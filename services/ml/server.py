@@ -1,6 +1,6 @@
 from PIL import Image
 from urllib.parse import urlparse, parse_qs
-from postgres import RegisteredImages, RejectedImagesByIPFS, RejectedImagesByNN
+from postgres import RegisteredImages
 import http.server
 import socketserver
 import json
@@ -35,17 +35,6 @@ class RequestHandler(http.server.BaseHTTPRequestHandler):
             nft_id = extract_query(parsed_query, 'nft_id')
 
             status_code, response_body = register_new_image(contract_address, nft_id)
-        elif parsed_url.path == '/check_registered_image':
-            contract_address = extract_query(parsed_query, 'contract_address')
-            nft_id = extract_query(parsed_query, 'nft_id')
-
-            status_code, response_body = check_registered_image(contract_address, nft_id)
-        elif parsed_url.path == '/registered_images':
-            status_code, response_body = get_registered_images()
-        elif parsed_url.path == '/rejected_images_by_nn':
-            status_code, response_body = get_rejected_images_by_nn()
-        elif parsed_url.path == '/rejected_images_by_ipfs':
-            status_code, response_body = get_rejected_images_by_ipfs()
 
         response = json.dumps(response_body)
         response = bytes(response, 'utf8')
@@ -160,63 +149,6 @@ def register_new_image(contract_address, nft_id):
             globals.image_manager.register_new_image(contract_address, nft_id, block_number, image_source)
 
             return 200, {'error': None}
-        except Exception as e:
-            return 500, {'error': e}
-
-
-def check_registered_image(contract_address, nft_id):
-    with globals.mutex:
-        try:
-            if not contract_address:
-                return 400, {'error': 'Invalid contract address'}
-            if not nft_id or not nft_id.isdigit():
-                return 400, {'error': 'Invalid nft id'}
-
-            already_registered_filter = RegisteredImages.filter(
-                filter={
-                    'contract_address': contract_address,
-                    'nft_id': nft_id,
-                }
-            )
-            already_registered = already_registered_filter.total
-
-            return 200, {'is_registered': not not already_registered}
-        except Exception as e:
-            return 500, {'error': e}
-
-
-def get_registered_images():
-    with globals.mutex:
-        try:
-            registered_images = RegisteredImages.all()
-            registered_images = map(lambda x: x.to_dict(), registered_images)
-            registered_images = list(registered_images)
-
-            return 200, {'registered_images': registered_images}
-        except Exception as e:
-            return 500, {'error': e}
-
-
-def get_rejected_images_by_ipfs():
-    with globals.mutex:
-        try:
-            rejected_images_by_ipfs = RejectedImagesByIPFS.all()
-            rejected_images_by_ipfs = map(lambda x: x.to_dict(), rejected_images_by_ipfs)
-            rejected_images_by_ipfs = list(rejected_images_by_ipfs)
-
-            return 200, {'rejected_images_by_ipfs': rejected_images_by_ipfs}
-        except Exception as e:
-            return 500, {'error': e}
-
-
-def get_rejected_images_by_nn():
-    with globals.mutex:
-        try:
-            rejected_images_by_nn = RejectedImagesByNN.all()
-            rejected_images_by_nn = map(lambda x: x.to_dict(), rejected_images_by_nn)
-            rejected_images_by_nn = list(rejected_images_by_nn)
-
-            return 200, {'rejected_images_by_nn': rejected_images_by_nn}
         except Exception as e:
             return 500, {'error': e}
 
