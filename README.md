@@ -47,6 +47,20 @@ The whole system has such scheme:
 
 ![Scheme](./media/scheme.png)
 
+## Using statistics server
+
+ML service provides API to interact with statistics data.
+It is available on port 9191.
+
+You can retrieve the following information:
+1. Check if image has been indexed
+2. Get array of all indexed images
+3. Get array of failed images while downloading by IPFS
+4. Get array of failed images while indexing by NN
+5. Get common statistics data
+
+You can check [Swagger](./services/ml/statistics_server.yaml) for more details.
+
 ## Some comments
 
 ### About chainlink.env
