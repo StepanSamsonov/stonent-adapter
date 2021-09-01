@@ -111,14 +111,14 @@ def connect():
         contract_address VARCHAR(128) NOT NULL,
         nft_id VARCHAR(128) NOT NULL,
         ipfs_path VARCHAR(128) NOT NULL,
-        description VARCHAR(128) NOT NULL
+        description VARCHAR(1024) NOT NULL
     )''')
     sql.query(f'''
     CREATE TABLE IF NOT EXISTS {config.postgres_schema}.{RejectedImagesByNN.name} (
         id BIGSERIAL PRIMARY KEY NOT NULL,
         contract_address VARCHAR(128) NOT NULL,
         nft_id VARCHAR(128) NOT NULL,
-        description VARCHAR(128) NOT NULL
+        description VARCHAR(1024) NOT NULL
     )''')
 
     print('Successfully connected to the Postgres')
