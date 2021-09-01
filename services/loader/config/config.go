@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-const Mode = "PROD"
+const Mode = "DEV"
 const ServerPort = 8080
 
 var StonentContractAddress = ""

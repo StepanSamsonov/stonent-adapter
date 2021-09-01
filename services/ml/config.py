@@ -1,7 +1,7 @@
 server_port = 9090
 statistics_server_port = 9191
 
-mode = 'PROD'
+mode = 'DEV'
 
 loader_host = 'localhost' if mode == 'DEV' else 'loader'
 loader_url = f'http://{loader_host}:8080'
