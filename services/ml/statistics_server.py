@@ -126,12 +126,12 @@ def get_statistics():
                 raise loader_error
             else:
                 found_images_count = loader_response.get('CountOfFound')
-                precessed_images_count = loader_response.get('CountOfDownloaded')
+                processed_images_count = loader_response.get('CountOfDownloaded')
 
             return 200, {
                 'statistics': {
                     'found_images_count': found_images_count,
-                    'precessed_images_count': precessed_images_count,
+                    'processed_images_count': processed_images_count,
                     'registered_images_count': registered_images_count,
                     'rejected_by_ipfs_images_count': rejected_by_ipfs_images_count,
                     'rejected_by_nn_images_count': rejected_by_nn_images_count,
